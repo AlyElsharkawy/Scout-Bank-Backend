@@ -3,14 +3,16 @@ package org.sportingscout.scout_bank_backend.entities;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PreUpdate;
 
 import java.time.Instant;
 
-@Entity
+@Entity(name = "article_version_tag")
 public class ArticleTag {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,6 +27,10 @@ public class ArticleTag {
   @Column(nullable = false)
   private Instant updatedAt;
 
+  @ManyToOne
+  @JoinColumn(name = "created_by", updatable = false, nullable = false)
+  private ApplicationUser createdBy;
+
   @PrePersist
   protected void onCreate() {
     this.createdAt = Instant.now();
@@ -37,6 +43,11 @@ public class ArticleTag {
   }
 
   public Boolean hasBeenUpdated() {
-    return this.createdAt == this.updatedAt;
+    return !this.createdAt.equals(this.updatedAt);
+  }
+
+  public ArticleTag(String name, ApplicationUser creator) {
+    this.name = name;
+    this.createdBy = creator;
   }
 }

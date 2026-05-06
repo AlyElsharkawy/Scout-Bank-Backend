@@ -1,96 +1,58 @@
 package org.sportingscout.scout_bank_backend.entities;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Version;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import jakarta.persistence.FetchType;
+
+import java.util.UUID;
+import java.time.Instant;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.AccessLevel;
-
-import java.util.UUID;
-import java.util.List;
-import java.util.ArrayList;
-import java.time.Instant;
 
 @Entity
 @Getter
-@Setter
 public class Article {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(updatable = false, nullable = false, unique = true)
-  @Setter(AccessLevel.NONE)
+  @Column(nullable = false, updatable = false, unique = true)
   private UUID externalId;
-
-  @Column(nullable = false, unique = true)
-  private String title;
-
-  @Column(nullable = false, columnDefinition = "TEXT")
-  private String content;
 
   @Version
   private Long version;
 
-  @Column(nullable = false)
-  private int majorVersion;
-
-  @Column(nullable = false)
-  private int minorVersion;
+  @OneToOne
+  @JoinColumn(name = "live_version_id")
+  private ArticleVersion liveArticle;
 
   @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
-  @Column(nullable = false)
+  @Column(nullable = false, updatable = false)
   private Instant updatedAt;
 
-  @Column(name = "image_key")
-  @ElementCollection
-  @CollectionTable(name = "article_images", joinColumns = @JoinColumn(name = "article_id"))
-  private List<String> imageNames = new ArrayList<>();
-
-  @Column(name = "video_key")
-  @ElementCollection
-  @CollectionTable(name = "article_videos", joinColumns = @JoinColumn(name = "article_id"))
-  private List<String> videoNames = new ArrayList<>();
-
-  public void addImage(String imageName) {
-    if (imageName != null && !imageName.trim().isEmpty()) {
-      this.imageNames.add(imageName);
-    }
-  }
-
-  public void removeImage(String imageName) {
-    this.imageNames.remove(imageName);
-  }
-
-  public void addVideo(String videoName) {
-    if (videoName != null && !videoName.trim().isEmpty()) {
-      this.imageNames.add(videoName);
-    }
-  }
-
-  public void removeVideo(String videoName) {
-    this.imageNames.remove(videoName);
-  }
+  @ManyToOne(fetch = FetchType.LAZY)
+  @Setter
+  private ApplicationUser updatedBy;
 
   @PrePersist
   protected void onCreate() {
     if (this.externalId == null) {
       this.externalId = UUID.randomUUID();
     }
-    this.createdAt = Instant.now();
     this.updatedAt = Instant.now();
+    this.createdAt = Instant.now();
   }
 
   @PreUpdate
@@ -98,11 +60,7 @@ public class Article {
     this.updatedAt = Instant.now();
   }
 
-  public String getSemanticVersion() {
-    return this.majorVersion + "." + this.minorVersion;
-  }
-
-  public Boolean hasBeenUpdated() {
-    return this.createdAt == this.updatedAt;
+  public Article(ArticleVersion article) {
+    this.liveArticle = article;
   }
 }
