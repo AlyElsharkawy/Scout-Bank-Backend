@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class ScoutBankBackendApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(ScoutBankBackendApplication.class, args);
-	}
+  public static void main(String[] args) {
+    SpringApplication.run(ScoutBankBackendApplication.class, args);
+  }
 
 }
