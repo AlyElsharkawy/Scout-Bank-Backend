@@ -16,10 +16,10 @@ public class S3Config {
   @Value("${s3.endpoint}")
   private String endpoint;
 
-  @Value("${s3.accessKey}")
+  @Value("${s3.access-key}")
   private String accessKey;
 
-  @Value("${s3.secretKey}")
+  @Value("${s3.secret-key}")
   private String secretKey;
 
   @Value("${s3.region}")
