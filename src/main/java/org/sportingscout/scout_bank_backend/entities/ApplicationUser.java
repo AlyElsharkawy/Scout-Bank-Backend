@@ -8,6 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 
+import jakarta.validation.constraints.NotBlank;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,6 +24,7 @@ public class ApplicationUser {
   private Long id;
 
   @Column(nullable = false)
+  @NotBlank(message = "Name cannot be empty or completely whitespace")
   private String name;
 
   private String profilePicture;

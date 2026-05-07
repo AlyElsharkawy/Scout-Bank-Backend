@@ -16,6 +16,7 @@ import jakarta.persistence.ElementCollection;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import jakarta.validation.constraints.NotBlank;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -54,6 +55,7 @@ public class ArticleVersion {
   private ApprovalStatus status;
 
   @Column(nullable = false, updatable = false)
+  @NotBlank(message = "Name cannot be empty or completely whitespace")
   private String title;
 
   @Column(nullable = false, columnDefinition = "TEXT")

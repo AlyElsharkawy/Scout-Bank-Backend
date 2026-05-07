@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PreUpdate;
+import jakarta.validation.constraints.NotBlank;
 
 import java.time.Instant;
 
@@ -19,6 +20,7 @@ public class ArticleTag {
   private Long id;
 
   @Column(nullable = false)
+  @NotBlank(message = "Name cannot be empty or completely whitespace")
   private String name;
 
   @Column(nullable = false)
