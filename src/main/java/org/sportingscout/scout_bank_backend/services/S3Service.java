@@ -17,8 +17,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 import java.io.File;
-import java.nio.file.Path;
-import java.io.FileOutputStream;
 import java.util.List;
 import java.util.stream.Collectors;
 

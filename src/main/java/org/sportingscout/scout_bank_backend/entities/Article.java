@@ -21,6 +21,7 @@ import lombok.Setter;
 
 @Entity
 @Getter
+@Setter
 public class Article {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

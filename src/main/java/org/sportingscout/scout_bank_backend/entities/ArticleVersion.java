@@ -20,6 +20,7 @@ import jakarta.validation.constraints.NotBlank;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.Builder;
 
 import java.util.UUID;
 import java.util.Collections;
@@ -114,6 +115,7 @@ public class ArticleVersion {
     return this.majorVersion + "." + this.minorVersion;
   }
 
+  @Builder
   public ArticleVersion(ApplicationUser author, Set<ApplicationUser> editors, String title, String content,
       int majorVersion, int minorVersion, Set<ArticleTag> tags, Set<String> imageNames, Set<String> videoNames) {
     this.author = author;

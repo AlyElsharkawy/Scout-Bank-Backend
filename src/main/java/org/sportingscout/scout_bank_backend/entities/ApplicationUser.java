@@ -5,13 +5,17 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.Builder;
 
 import java.time.Instant;
 
@@ -28,6 +32,18 @@ public class ApplicationUser {
   private String name;
 
   private String profilePicture;
+
+  @Column(nullable = false, unique = true)
+  private String email;
+
+  @Column(nullable = false, unique = true)
+  @Pattern(regexp = "^01[0125]\\d{8}$", message = "Invalid Egyptian mobile number format")
+  @NotBlank
+  private String phoneNumber;
+
+  @ManyToOne
+  @JoinColumn(name = "organization_id")
+  private Organization organization;
 
   @Column(nullable = false, updatable = false)
   private Instant createdAt;
@@ -48,5 +64,15 @@ public class ApplicationUser {
 
   public Boolean hasBeenUpdated() {
     return this.createdAt == this.updatedAt;
+  }
+
+  @Builder
+  public ApplicationUser(String name, String profilePicture, String email, String phoneNumber,
+      Organization organization) {
+    this.name = name;
+    this.profilePicture = profilePicture;
+    this.email = email;
+    this.phoneNumber = phoneNumber;
+    this.organization = organization;
   }
 }

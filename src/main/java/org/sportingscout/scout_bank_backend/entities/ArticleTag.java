@@ -2,6 +2,7 @@ package org.sportingscout.scout_bank_backend.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.GenerationType;
@@ -11,8 +12,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PreUpdate;
 import jakarta.validation.constraints.NotBlank;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.Builder;
+
 import java.time.Instant;
 
+@Getter
+@Setter
 @Entity(name = "article_version_tag")
 public class ArticleTag {
   @Id
@@ -29,7 +36,7 @@ public class ArticleTag {
   @Column(nullable = false)
   private Instant updatedAt;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "created_by", updatable = false, nullable = false)
   private ApplicationUser createdBy;
 
@@ -48,6 +55,7 @@ public class ArticleTag {
     return !this.createdAt.equals(this.updatedAt);
   }
 
+  @Builder
   public ArticleTag(String name, ApplicationUser creator) {
     this.name = name;
     this.createdBy = creator;
