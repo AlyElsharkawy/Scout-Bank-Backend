@@ -28,9 +28,6 @@ public class Organization {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false, updatable = false, unique = true)
-  private UUID externalId;
-
   @NotBlank(message = "Name cannot be blank or completely whitespace")
   @Column(nullable = false, unique = true)
   private String name;
@@ -55,9 +52,6 @@ public class Organization {
 
   @PrePersist
   protected void onCreate() {
-    if (this.externalId == null) {
-      this.externalId = UUID.randomUUID();
-    }
     this.createdAt = Instant.now();
     this.updatedAt = Instant.now();
   }

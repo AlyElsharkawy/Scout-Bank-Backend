@@ -43,7 +43,7 @@ public class UsersService {
       Optional<ApplicationUser> temp = usersRepo.findById(id);
       return temp;
     } catch (DataAccessException e) {
-      logger.error("Database error while fetching user {}: ", id, e.getMessage());
+      logger.error("Database error while fetching user with id{}: ", id, e.getMessage());
       throw e;
     } catch (Exception e) {
       logger.error("Unexpected error during user fetch with id: {}", id, e);
@@ -74,7 +74,7 @@ public class UsersService {
       logger.warn("Attempted to create user with duplicate unique field: ", e.getMessage());
       throw new IllegalArgumentException("A user with this email or phone number already exists.");
     } catch (DataAccessException e) {
-      logger.error("CRITICAL: Could not reach PostgreSQL on Arch server!", e);
+      logger.error("CRITICAL: Could not reach PostgreSQL on server!", e);
       throw new RuntimeException("Service temporarily unavailable. Please try again later.");
     } catch (Exception e) {
       logger.error("Unexpected error during user creation: ", e);
