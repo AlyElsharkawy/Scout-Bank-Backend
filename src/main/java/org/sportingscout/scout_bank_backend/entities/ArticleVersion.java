@@ -42,6 +42,10 @@ public class ArticleVersion {
   @JoinColumn(name = "author_id", nullable = false, updatable = false)
   private ApplicationUser author;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "article_type_id", nullable = false, updatable = false)
+  private ArticleType type;
+
   // Many to Many
   @ManyToMany
   @JoinTable(name = "article_version_editors", joinColumns = @JoinColumn(name = "article_version_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
@@ -116,9 +120,11 @@ public class ArticleVersion {
   }
 
   @Builder
-  public ArticleVersion(ApplicationUser author, Set<ApplicationUser> editors, String title, String content,
+  public ArticleVersion(ApplicationUser author, ArticleType type, Set<ApplicationUser> editors, String title,
+      String content,
       int majorVersion, int minorVersion, Set<ArticleTag> tags, Set<String> imageNames, Set<String> videoNames) {
     this.author = author;
+    this.type = type;
     this.editors = editors;
     this.status = ApprovalStatus.DRAFT;
     this.title = title;
