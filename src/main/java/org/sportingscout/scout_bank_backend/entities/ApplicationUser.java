@@ -12,6 +12,7 @@ import jakarta.persistence.PreUpdate;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Email;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -34,6 +35,8 @@ public class ApplicationUser {
   private String profilePicture;
 
   @Column(nullable = false, unique = true)
+  @Email(message = "Email must be valid")
+  @NotBlank(message = "Email is required")
   private String email;
 
   @Column(nullable = false, unique = true)
