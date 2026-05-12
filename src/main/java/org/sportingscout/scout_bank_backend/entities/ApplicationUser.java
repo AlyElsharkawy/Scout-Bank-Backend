@@ -15,6 +15,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Email;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.Builder;
 
@@ -23,6 +24,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
+@NoArgsConstructor
 public class ApplicationUser {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
