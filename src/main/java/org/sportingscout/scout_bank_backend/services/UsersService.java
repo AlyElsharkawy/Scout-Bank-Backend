@@ -11,7 +11,9 @@ import org.sportingscout.scout_bank_backend.repositories.UsersRepository;
 import org.sportingscout.scout_bank_backend.repositories.OrganizationsRepository;
 import org.sportingscout.scout_bank_backend.dtos.users.CreateUserRequest;
 import org.sportingscout.scout_bank_backend.dtos.users.UpdateUserRequest;
-import org.sportingscout.scout_bank_backend.mappers.CreateUserRequestMapper;
+import org.sportingscout.scout_bank_backend.dtos.users.AllUsersResponseDTO;
+import org.sportingscout.scout_bank_backend.mappers.users.AllUsersResponseMapper;
+import org.sportingscout.scout_bank_backend.mappers.users.CreateUserRequestMapper;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,14 +27,17 @@ public class UsersService {
   private final UsersRepository usersRepo;
   private final OrganizationsRepository organizationsRepo;
   private final CreateUserRequestMapper requestMapper;
+  private final AllUsersResponseMapper allUsersResponseMapper;
   private final PasswordEncoder passwordEncoder;
 
   public UsersService(UsersRepository usersRepo, OrganizationsRepository organizationsRepo,
-      CreateUserRequestMapper requestMapper, PasswordEncoder passwordEncoder) {
+      CreateUserRequestMapper requestMapper, PasswordEncoder passwordEncoder,
+      AllUsersResponseMapper allUsersResponseMapper) {
     this.usersRepo = usersRepo;
     this.requestMapper = requestMapper;
     this.organizationsRepo = organizationsRepo;
     this.passwordEncoder = passwordEncoder;
+    this.allUsersResponseMapper = allUsersResponseMapper;
   }
 
   private static final Logger logger = LoggerFactory.getLogger(UsersService.class);
@@ -55,11 +60,11 @@ public class UsersService {
     }
   }
 
-  public List<ApplicationUser> getAllUsers() {
+  public List<AllUsersResponseDTO> getAllUsers() {
     try {
       logger.debug("Attempting to fetch all ApplicationUser instances");
       List<ApplicationUser> temp = usersRepo.findAll();
-      return temp;
+      return allUsersResponseMapper.toResponse(temp);
     } catch (DataAccessException e) {
       logger.error("Database error while fetching all ApplicationUser instances: ", e);
       throw e;

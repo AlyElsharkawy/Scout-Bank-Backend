@@ -8,6 +8,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import org.sportingscout.scout_bank_backend.services.UsersService;
 import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
+import org.sportingscout.scout_bank_backend.mappers.users.AllUsersResponseMapper;
+import org.sportingscout.scout_bank_backend.dtos.users.AllUsersResponseDTO;
 
 import java.util.Optional;
 import java.util.List;
@@ -27,6 +29,9 @@ public class UsersControllerTest {
 
   @Autowired
   private MockMvc mockMvc;
+
+  @Autowired
+  private AllUsersResponseMapper mapper;
 
   @MockitoBean
   private UsersService usersService;
@@ -62,7 +67,8 @@ public class UsersControllerTest {
       when(usersService.getUserById(i)).thenReturn(Optional.of(temp));
       ls.add(temp);
     }
-    when(usersService.getAllUsers()).thenReturn(ls);
+    List<AllUsersResponseDTO> responseDtos = mapper.toResponse(ls);
+    when(usersService.getAllUsers()).thenReturn(responseDtos);
     mockMvc.perform(get("/api/users"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(10)));

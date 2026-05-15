@@ -1,4 +1,4 @@
-package org.sportingscout.scout_bank_backend.mappers;
+package org.sportingscout.scout_bank_backend.mappers.users;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
