@@ -3,6 +3,8 @@ package org.sportingscout.scout_bank_backend.services;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.dao.DataAccessException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
 import org.sportingscout.scout_bank_backend.entities.Organization;
 import org.sportingscout.scout_bank_backend.repositories.UsersRepository;
@@ -23,12 +25,14 @@ public class UsersService {
   private final UsersRepository usersRepo;
   private final OrganizationsRepository organizationsRepo;
   private final CreateUserRequestMapper requestMapper;
+  private final PasswordEncoder passwordEncoder;
 
   public UsersService(UsersRepository usersRepo, OrganizationsRepository organizationsRepo,
-      CreateUserRequestMapper requestMapper) {
+      CreateUserRequestMapper requestMapper, PasswordEncoder passwordEncoder) {
     this.usersRepo = usersRepo;
     this.requestMapper = requestMapper;
     this.organizationsRepo = organizationsRepo;
+    this.passwordEncoder = passwordEncoder;
   }
 
   private static final Logger logger = LoggerFactory.getLogger(UsersService.class);
@@ -68,6 +72,7 @@ public class UsersService {
   public void createUser(CreateUserRequest request) {
     try {
       ApplicationUser entity = requestMapper.toEntity(request);
+      entity.setPassword(passwordEncoder.encode(entity.getPassword()));
       usersRepo.save(entity);
       logger.debug("Successfully created user | ID: {}, Email: {}", entity.getId(), request.email());
     } catch (DataIntegrityViolationException e) {

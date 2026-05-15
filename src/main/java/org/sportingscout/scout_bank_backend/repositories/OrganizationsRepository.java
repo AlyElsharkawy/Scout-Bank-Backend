@@ -6,4 +6,6 @@ import java.util.Optional;
 
 public interface OrganizationsRepository extends JpaRepository<Organization, Long> {
   Optional<Organization> findById(String id);
+
+  Optional<Organization> findByName(String name);
 }

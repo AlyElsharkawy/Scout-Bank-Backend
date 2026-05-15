@@ -16,12 +16,13 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @Entity
 public class Organization {
   @Id

@@ -5,7 +5,9 @@ import org.sportingscout.scout_bank_backend.dtos.users.CreateUserRequest;
 import org.sportingscout.scout_bank_backend.dtos.users.UpdateUserRequest;
 import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
 import org.sportingscout.scout_bank_backend.services.UsersService;
+import org.sportingscout.scout_bank_backend.security.Permissions;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,6 +33,7 @@ public class UsersController {
   }
 
   @GetMapping
+  @PreAuthorize("@auth.has('user:view')")
   public ResponseEntity<List<ApplicationUser>> getAllUsers() {
     return ResponseEntity.ok(this.usersService.getAllUsers());
   }

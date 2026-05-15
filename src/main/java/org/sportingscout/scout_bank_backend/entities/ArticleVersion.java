@@ -83,12 +83,10 @@ public class ArticleVersion {
   @JoinTable(name = "article_version_tags", joinColumns = @JoinColumn(name = "article_version_id"), inverseJoinColumns = @JoinColumn(name = "article_tag_id"))
   private Set<ArticleTag> tags = new HashSet<>();
 
-  @Column(name = "image_key")
   @ElementCollection
   @CollectionTable(name = "article_version_images", joinColumns = @JoinColumn(name = "article_version_id"))
   private Set<String> imageNames = new HashSet<>();
 
-  @Column(name = "video_key")
   @ElementCollection
   @CollectionTable(name = "article_version_videos", joinColumns = @JoinColumn(name = "article_version_id"))
   private Set<String> videoNames = new HashSet<>();

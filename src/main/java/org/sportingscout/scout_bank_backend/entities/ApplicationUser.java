@@ -1,6 +1,7 @@
 package org.sportingscout.scout_bank_backend.entities;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
@@ -9,10 +10,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.CollectionTable;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +24,11 @@ import lombok.Setter;
 import lombok.Builder;
 
 import java.time.Instant;
+import java.util.Set;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.HashSet;
 
 @Getter
 @Setter
@@ -50,6 +59,13 @@ public class ApplicationUser {
   @JoinColumn(name = "organization_id")
   private Organization organization;
 
+  @ElementCollection(fetch = FetchType.EAGER)
+  @CollectionTable(name = "application_user_authorities", joinColumns = @JoinColumn(name = "application_user_id"))
+  private Set<String> authorities = new HashSet<>();
+
+  @Column(nullable = false)
+  private String password;
+
   @Column(nullable = false, updatable = false)
   private Instant createdAt;
 
@@ -72,12 +88,14 @@ public class ApplicationUser {
   }
 
   @Builder
-  public ApplicationUser(String name, String profilePicture, String email, String phoneNumber,
-      Organization organization) {
+  public ApplicationUser(String email, String password, String name, String profilePicture, String phoneNumber,
+      Organization organization, Set<String> authorities) {
+    this.email = email;
+    this.password = password;
     this.name = name;
     this.profilePicture = profilePicture;
-    this.email = email;
     this.phoneNumber = phoneNumber;
     this.organization = organization;
+    this.authorities = authorities;
   }
 }
