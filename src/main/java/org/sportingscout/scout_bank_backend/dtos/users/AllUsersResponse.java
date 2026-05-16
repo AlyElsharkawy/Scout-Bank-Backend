@@ -1,12 +1,11 @@
 package org.sportingscout.scout_bank_backend.dtos.users;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
-public record SingleUserResponseDTO(
+public record AllUsersResponse(
     String email,
     String name,
-    String profilePicture,
     String phoneNumber,
     String organizationName,
-    LocalDateTime createdAt) {
+    List<String> authorities) {
 }

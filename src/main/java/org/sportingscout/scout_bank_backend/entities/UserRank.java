@@ -31,19 +31,19 @@ public class UserRank {
   @NotBlank(message = "Description cannot be empty")
   private String description;
 
-  private int minimumAge;
+  private Integer minimumAge;
 
-  private int maximumAge;
+  private Integer maximumAge;
 
   @Builder
-  public UserRank(String name, String description, int minimumAge, int maximumAge) {
+  public UserRank(String name, String description, Integer minimumAge, Integer maximumAge) {
     this.name = name;
     this.description = description;
     this.minimumAge = minimumAge;
     this.maximumAge = maximumAge;
   }
 
-  public UserRank(String name, String description, int minimumAge) {
+  public UserRank(String name, String description, Integer minimumAge) {
     this.name = name;
     this.description = description;
     this.minimumAge = minimumAge;

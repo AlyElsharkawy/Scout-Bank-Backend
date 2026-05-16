@@ -1,4 +1,4 @@
-package org.sportingscout.scout_bank_backend.services;
+package org.sportingscout.scout_bank_backend.services.users;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -11,9 +11,10 @@ import org.sportingscout.scout_bank_backend.repositories.UsersRepository;
 import org.sportingscout.scout_bank_backend.repositories.OrganizationsRepository;
 import org.sportingscout.scout_bank_backend.dtos.users.CreateUserRequest;
 import org.sportingscout.scout_bank_backend.dtos.users.UpdateUserRequest;
-import org.sportingscout.scout_bank_backend.dtos.users.AllUsersResponseDTO;
+import org.sportingscout.scout_bank_backend.dtos.users.AllUsersResponse;
 import org.sportingscout.scout_bank_backend.mappers.users.AllUsersResponseMapper;
 import org.sportingscout.scout_bank_backend.mappers.users.CreateUserRequestMapper;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -60,7 +61,7 @@ public class UsersService {
     }
   }
 
-  public List<AllUsersResponseDTO> getAllUsers() {
+  public List<AllUsersResponse> getAllUsers() {
     try {
       logger.debug("Attempting to fetch all ApplicationUser instances");
       List<ApplicationUser> temp = usersRepo.findAll();
@@ -112,6 +113,7 @@ public class UsersService {
     }
   }
 
+  @Transactional
   public void updateUser(Long id, UpdateUserRequest req) {
     try {
       ApplicationUser existingUser = usersRepo.findById(id)

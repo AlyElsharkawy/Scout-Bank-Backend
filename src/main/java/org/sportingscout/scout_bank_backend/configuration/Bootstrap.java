@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.method.ParameterErrors;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Set;
@@ -136,7 +137,9 @@ public class Bootstrap implements CommandLineRunner {
               Permissions.ARTICLE_EDIT, Permissions.ARTICLE_WRITE, Permissions.ARTICLE_REVIEW,
               Permissions.ARTICLE_DELETE, Permissions.MEDIA_UPLOAD, Permissions.USER_VIEW,
               Permissions.USER_DELETE, Permissions.ORGANIZATION_CREATE, Permissions.ORGANIZATION_EDIT,
-              Permissions.ORGANIZATION_DELETE, Permissions.USER_ROLE_EDIT, Permissions.USER_RANK_EDIT));
+              Permissions.ORGANIZATION_DELETE, Permissions.USER_ROLE_EDIT, Permissions.USER_RANK_EDIT,
+              Permissions.ROLE_CREATE, Permissions.ROLE_EDIT, Permissions.ROLE_DELETE,
+              Permissions.RANK_CREATE, Permissions.RANK_EDIT, Permissions.RANK_DELETE));
 
       userRolesRepo.save(viewerRole);
       userRolesRepo.save(editorRole);

@@ -21,4 +21,14 @@ public class Permissions {
   // Media permissions
   public static final String MEDIA_UPLOAD = "media:upload";
   public static final String MEDIA_DELETE = "media:delete";
+
+  // Rank permissions
+  public static final String RANK_CREATE = "rank:create";
+  public static final String RANK_EDIT = "rank:edit";
+  public static final String RANK_DELETE = "rank:delete";
+
+  // Role permissions
+  public static final String ROLE_CREATE = "role:create";
+  public static final String ROLE_EDIT = "role:edit";
+  public static final String ROLE_DELETE = "role:delete";
 }

@@ -6,10 +6,11 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import org.sportingscout.scout_bank_backend.services.UsersService;
+import org.sportingscout.scout_bank_backend.services.users.UsersService;
 import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
 import org.sportingscout.scout_bank_backend.mappers.users.AllUsersResponseMapper;
-import org.sportingscout.scout_bank_backend.dtos.users.AllUsersResponseDTO;
+import org.sportingscout.scout_bank_backend.dtos.users.AllUsersResponse;
+import org.sportingscout.scout_bank_backend.controllers.users.UsersController;
 
 import java.util.Optional;
 import java.util.List;
@@ -67,7 +68,7 @@ public class UsersControllerTest {
       when(usersService.getUserById(i)).thenReturn(Optional.of(temp));
       ls.add(temp);
     }
-    List<AllUsersResponseDTO> responseDtos = mapper.toResponse(ls);
+    List<AllUsersResponse> responseDtos = mapper.toResponse(ls);
     when(usersService.getAllUsers()).thenReturn(responseDtos);
     mockMvc.perform(get("/api/users"))
         .andExpect(status().isOk())

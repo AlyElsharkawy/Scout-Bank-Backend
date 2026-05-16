@@ -1,13 +1,11 @@
 package org.sportingscout.scout_bank_backend.controllers;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.Valid;
 
-import org.sportingscout.scout_bank_backend.dtos.users.CreateUserRequest;
-import org.sportingscout.scout_bank_backend.dtos.users.UpdateUserRequest;
-import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
 import org.sportingscout.scout_bank_backend.entities.Organization;
+import org.sportingscout.scout_bank_backend.mappers.CreateOrganizationRequest;
 import org.sportingscout.scout_bank_backend.services.OrganizationsService;
-import org.sportingscout.scout_bank_backend.services.UsersService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +35,12 @@ public class OrganizationsController {
   @GetMapping
   public List<Organization> getAllOrganizations() {
     return service.getAllOrganizations();
+  }
+
+  @PostMapping
+  public ResponseEntity<Void> createOrganization(@Valid @RequestBody CreateOrganizationRequest request) {
+    service.createOrganization(request);
+    return ResponseEntity.status(HttpStatus.CREATED).build();
   }
 
   @GetMapping("/{id}")

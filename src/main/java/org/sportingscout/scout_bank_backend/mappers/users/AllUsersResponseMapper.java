@@ -1,6 +1,6 @@
 package org.sportingscout.scout_bank_backend.mappers.users;
 
-import org.sportingscout.scout_bank_backend.dtos.users.AllUsersResponseDTO;
+import org.sportingscout.scout_bank_backend.dtos.users.AllUsersResponse;
 import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
 
 import org.mapstruct.Mapper;
@@ -13,8 +13,8 @@ import java.util.List;
 public interface AllUsersResponseMapper {
 
   @Mapping(source = "organization.name", target = "organizationName")
-  AllUsersResponseDTO toResponse(ApplicationUser user);
+  AllUsersResponse toResponse(ApplicationUser user);
 
-  List<AllUsersResponseDTO> toResponse(List<ApplicationUser> users);
+  List<AllUsersResponse> toResponse(List<ApplicationUser> users);
 
 }

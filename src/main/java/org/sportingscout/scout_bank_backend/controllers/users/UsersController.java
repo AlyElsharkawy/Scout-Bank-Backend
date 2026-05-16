@@ -1,11 +1,11 @@
-package org.sportingscout.scout_bank_backend.controllers;
+package org.sportingscout.scout_bank_backend.controllers.users;
 
 import jakarta.validation.Valid;
 import org.sportingscout.scout_bank_backend.dtos.users.CreateUserRequest;
 import org.sportingscout.scout_bank_backend.dtos.users.UpdateUserRequest;
-import org.sportingscout.scout_bank_backend.dtos.users.AllUsersResponseDTO;
+import org.sportingscout.scout_bank_backend.dtos.users.AllUsersResponse;
 import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
-import org.sportingscout.scout_bank_backend.services.UsersService;
+import org.sportingscout.scout_bank_backend.services.users.UsersService;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.HttpStatus;
@@ -34,7 +34,7 @@ public class UsersController {
 
   @GetMapping
   @PreAuthorize("@auth.has('user:view')")
-  public ResponseEntity<List<AllUsersResponseDTO>> getAllUsers() {
+  public ResponseEntity<List<AllUsersResponse>> getAllUsers() {
     return ResponseEntity.ok(this.usersService.getAllUsers());
   }
 
