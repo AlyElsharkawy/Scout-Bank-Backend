@@ -16,7 +16,6 @@ import jakarta.persistence.CollectionTable;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Size;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,10 +23,8 @@ import lombok.Setter;
 import lombok.Builder;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Set;
-
-import org.springframework.security.crypto.password.PasswordEncoder;
-
 import java.util.HashSet;
 
 @Getter
@@ -55,13 +52,20 @@ public class ApplicationUser {
   @NotBlank
   private String phoneNumber;
 
+  @Column(nullable = false)
+  private LocalDate birthDate;
+
   @ManyToOne
   @JoinColumn(name = "organization_id")
   private Organization organization;
 
-  @ElementCollection(fetch = FetchType.EAGER)
-  @CollectionTable(name = "application_user_authorities", joinColumns = @JoinColumn(name = "application_user_id"))
-  private Set<String> authorities = new HashSet<>();
+  @ManyToOne
+  @JoinColumn(name = "user_rank_id")
+  private UserRank rank;
+
+  @ManyToOne
+  @JoinColumn(name = "user_role_id")
+  private UserRole role;
 
   @Column(nullable = false)
   private String password;
@@ -88,14 +92,17 @@ public class ApplicationUser {
   }
 
   @Builder
-  public ApplicationUser(String email, String password, String name, String profilePicture, String phoneNumber,
-      Organization organization, Set<String> authorities) {
+  public ApplicationUser(String email, String password, String name, String profilePicture,
+      String phoneNumber, LocalDate birthdate, Organization organization, UserRank rank,
+      UserRole role) {
     this.email = email;
     this.password = password;
     this.name = name;
     this.profilePicture = profilePicture;
     this.phoneNumber = phoneNumber;
+    this.birthDate = birthdate;
     this.organization = organization;
-    this.authorities = authorities;
+    this.rank = rank;
+    this.role = role;
   }
 }

@@ -26,7 +26,7 @@ public class ApplicationUserDetails implements UserDetailsService {
 
     return User.builder()
         .username(user.getEmail())
-        .password(user.getPassword()).authorities(user.getAuthorities().stream()
+        .password(user.getPassword()).authorities(user.getRole().getAuthorities().stream()
             .map(SimpleGrantedAuthority::new)
             .collect(Collectors.toList()))
         .build();

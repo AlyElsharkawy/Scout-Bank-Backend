@@ -1,10 +1,13 @@
 package org.sportingscout.scout_bank_backend.configuration;
 
-import org.apache.catalina.User;
 import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
 import org.sportingscout.scout_bank_backend.entities.Organization;
+import org.sportingscout.scout_bank_backend.entities.UserRank;
+import org.sportingscout.scout_bank_backend.entities.UserRole;
 import org.sportingscout.scout_bank_backend.repositories.UsersRepository;
 import org.sportingscout.scout_bank_backend.repositories.OrganizationsRepository;
+import org.sportingscout.scout_bank_backend.repositories.UserRanksRepository;
+import org.sportingscout.scout_bank_backend.repositories.UserRolesRepository;
 import org.sportingscout.scout_bank_backend.security.Permissions;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -15,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import java.util.Set;
 import java.util.Optional;
 import java.util.Locale;
+import java.time.LocalDate;
 
 import net.datafaker.Faker;
 
@@ -22,6 +26,8 @@ import net.datafaker.Faker;
 public class Bootstrap implements CommandLineRunner {
   private final UsersRepository usersRepo;
   private final OrganizationsRepository organizationsRepo;
+  private final UserRanksRepository userRanksRepo;
+  private final UserRolesRepository userRolesRepo;
   private final PasswordEncoder passwordEncoder;
   private static final Faker egyptianFaker = new Faker(Locale.of("ar", "EG"));
   private static final Faker faker = new Faker();
@@ -29,17 +35,29 @@ public class Bootstrap implements CommandLineRunner {
   @Value("${bootstrap.root-user:false}")
   private boolean createRoot;
 
+  @Value("${bootstrap.users:false}")
+  private boolean createUsers;
+
   @Value("${bootstrap.organizations:false}")
   private boolean createOrganizations;
+
+  @Value("${bootstrap.ranks:false}")
+  private boolean createRanks;
+
+  @Value("${bootstrap.roles:false}")
+  private boolean createRoles;
 
   @Value("${bootstrap.root-password}")
   private String tempPassword;
 
   public Bootstrap(UsersRepository usersRepo, OrganizationsRepository organizationsRepo,
+      UserRanksRepository userRanksRepo, UserRolesRepository userRolesRepo,
       PasswordEncoder passwordEncoder) {
     this.usersRepo = usersRepo;
     this.organizationsRepo = organizationsRepo;
     this.passwordEncoder = passwordEncoder;
+    this.userRanksRepo = userRanksRepo;
+    this.userRolesRepo = userRolesRepo;
 
     if (tempPassword == null) {
       tempPassword = egyptianFaker.internet().password(8, 8, true, false, true);
@@ -49,29 +67,112 @@ public class Bootstrap implements CommandLineRunner {
 
   @Override
   public void run(String... args) throws Exception {
+    if (createRanks) {
+      UserRank smurfsRank = new UserRank("Smurfs",
+          "Our youngest members who start their scouting journey through play, exploration, and basic outdoor skills.",
+          7, 9);
+
+      UserRank cubsRank = new UserRank("Cubs",
+          "Cubs develop teamwork, outdoor skills and self-confidence through games, activities and adventures.", 9, 12);
+
+      UserRank scoutsRank = new UserRank("Scouts",
+          "Scouts gain independence through camping, hiking, and community service while earning badges.", 12, 15);
+
+      UserRank seniorScoutsRank = new UserRank("Senior Scouts",
+          "Senior scouts build leadership skills through challenging outdoor adventures and community projects.", 15,
+          17);
+
+      UserRank roversRank = new UserRank("Rovers",
+          "Our young adult members who focus on leadership, service, and advanced outdoor skills.", 18);
+
+      UserRank leaderRank = new UserRank("Leaders",
+          "A Scout leader is an individual responsible for guiding and supporting scouts, organizing committees, planning activities and events, and making sure everything runs smoothly to create a successful and meaningful scouting experience for everyone involved.");
+
+      userRanksRepo.save(smurfsRank);
+      userRanksRepo.save(cubsRank);
+      userRanksRepo.save(scoutsRank);
+      userRanksRepo.save(seniorScoutsRank);
+      userRanksRepo.save(roversRank);
+      userRanksRepo.save(leaderRank);
+    }
+
     if (createOrganizations) {
       Organization sportingScout = new Organization("Sporting Scouts",
           "The Sporting Scouts are an Alexandria-based scouting organization headquartered at Sporting Club, Alexandria");
       organizationsRepo.save(sportingScout);
     }
 
+    if (createRoles) {
+      UserRole viewerRole = new UserRole("Viewer",
+          "Access is restricted to read-only capabilities. Members assigned to this role are permitted to browse and read all publicly available platform content but do not possess permissions to create, modify, or delete data.",
+          Set.of());
+
+      UserRole editorRole = new UserRole("Editor",
+          "Users in this role are authorized to update and edit existing articles across the knowledge bank to ensure accuracy and formatting compliance, but they cannot author new articles or manage media assets.",
+          Set.of(Permissions.ARTICLE_EDIT));
+
+      UserRole writerRole = new UserRole("Writer",
+          "Beyond the editing privileges of an Editor, a Writer has the authorization to create and publish brand-new articles and upload related media files, such as images or videos, to support their text.",
+          Set.of(Permissions.ARTICLE_EDIT, Permissions.ARTICLE_WRITE,
+              Permissions.MEDIA_UPLOAD));
+
+      UserRole reviewerRole = new UserRole("Reviewer",
+          "Reviewers inherit all the article generation and media upload capabilities of a Writer, with the addition of the authority to evaluate, approve, or reject newly drafted submissions before they become public.",
+          Set.of(
+              Permissions.ARTICLE_EDIT, Permissions.ARTICLE_WRITE, Permissions.ARTICLE_REVIEW,
+              Permissions.MEDIA_UPLOAD));
+
+      UserRole supervisorRole = new UserRole("Supervisor",
+          "Supervisors manage daily operations and organizational structures. This role has the authority to oversee content life cycles (including article deletion), create and manage organizational units, and modify user role assignments within their scope.",
+          Set.of(
+              Permissions.ARTICLE_EDIT, Permissions.ARTICLE_WRITE, Permissions.ARTICLE_REVIEW,
+              Permissions.ARTICLE_DELETE, Permissions.MEDIA_UPLOAD, Permissions.USER_VIEW,
+              Permissions.USER_ROLE_EDIT, Permissions.ORGANIZATION_CREATE,
+              Permissions.ORGANIZATION_EDIT));
+
+      UserRole adminRole = new UserRole("Admin",
+          "Administrators hold global administrative control over the platform. Administrators possess full operational rights, including system-wide configuration management, user rank adjustments, and the authority to execute destructive actions such as deleting user profiles or entire organizations.",
+          Set.of(
+              Permissions.ARTICLE_EDIT, Permissions.ARTICLE_WRITE, Permissions.ARTICLE_REVIEW,
+              Permissions.ARTICLE_DELETE, Permissions.MEDIA_UPLOAD, Permissions.USER_VIEW,
+              Permissions.USER_DELETE, Permissions.ORGANIZATION_CREATE, Permissions.ORGANIZATION_EDIT,
+              Permissions.ORGANIZATION_DELETE, Permissions.USER_ROLE_EDIT, Permissions.USER_RANK_EDIT));
+
+      userRolesRepo.save(viewerRole);
+      userRolesRepo.save(editorRole);
+      userRolesRepo.save(writerRole);
+      userRolesRepo.save(reviewerRole);
+      userRolesRepo.save(supervisorRole);
+      userRolesRepo.save(adminRole);
+    }
+
+    Optional<Organization> tempOrganization = organizationsRepo.findByName("Sporting Scouts");
+    Organization rootOrganization = tempOrganization.isPresent() ? tempOrganization.get() : null;
+
+    Optional<UserRank> tempRank = userRanksRepo.findByName("Rovers");
+    UserRank finalRank = tempRank.isPresent() ? tempRank.get() : null;
+
+    Optional<UserRole> tempAdminRole = userRolesRepo.findByName("Admin");
+    UserRole finalAdminRole = tempAdminRole.isPresent() ? tempAdminRole.get() : null;
+
+    Optional<UserRole> tempViewerRole = userRolesRepo.findByName("Viewer");
+    UserRole finalViewerRole = tempViewerRole.isPresent() ? tempViewerRole.get() : null;
+
     if (createRoot) {
-      Optional<Organization> temp = organizationsRepo.findByName("Sporting Scouts");
-      Organization rootOrganization = temp.isPresent() ? temp.get() : null;
       ApplicationUser rootUser = ApplicationUser.builder()
           .name("Root User")
           .email("root@example.com")
           .phoneNumber("01245678910")
-          .authorities(Set.of(
-              Permissions.ARTICLE_VIEW, Permissions.ARTICLE_WRITE, Permissions.ARTICLE_EDIT,
-              Permissions.ARTICLE_DELETE, Permissions.ARTICLE_REVIEW,
-              Permissions.ORGANIZATION_VIEW, Permissions.ORGANIZATION_CREATE, Permissions.ORGANIZATION_EDIT,
-              Permissions.MEDIA_UPLOAD, Permissions.MEDIA_DELETE,
-              Permissions.USER_VIEW, Permissions.USER_ROLE_EDIT, Permissions.USER_DELETE))
           .organization(rootOrganization)
+          .rank(finalRank)
+          .role(finalAdminRole)
+          .birthdate(LocalDate.of(2000, 1, 1))
           .password(this.passwordEncoder.encode(tempPassword))
           .build();
       usersRepo.save(rootUser);
+    }
+
+    if (createUsers) {
       for (int i = 0; i < 5; i++) {
         tempPassword = egyptianFaker.internet().password(8, 8, true, false, true);
         ApplicationUser tempUser = ApplicationUser.builder()
@@ -79,9 +180,10 @@ public class Bootstrap implements CommandLineRunner {
             .email(faker.internet().emailAddress())
             .phoneNumber(egyptianFaker.phoneNumber().cellPhone().replace(" ", ""))
             .organization(rootOrganization)
-            .authorities(Set.of(
-                Permissions.ARTICLE_VIEW, Permissions.ORGANIZATION_VIEW))
             .password(passwordEncoder.encode(tempPassword))
+            .birthdate(LocalDate.of(2000, 1, 1))
+            .rank(finalRank)
+            .role(finalViewerRole)
             .build();
         ApplicationUser newUser = usersRepo.save(tempUser);
         System.out.println("Created temp user with ID " + newUser.getId() + " and password " + tempPassword);
