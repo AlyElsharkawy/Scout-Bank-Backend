@@ -1,5 +1,9 @@
 package org.sportingscout.scout_bank_backend.entities;
 
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -10,8 +14,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.CollectionTable;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -24,14 +26,14 @@ import lombok.Builder;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
 @Entity
 @NoArgsConstructor
-public class ApplicationUser {
+public class ApplicationUser implements UserDetails {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -59,11 +61,11 @@ public class ApplicationUser {
   @JoinColumn(name = "organization_id")
   private Organization organization;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_rank_id")
   private UserRank rank;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_role_id")
   private UserRole role;
 
@@ -91,6 +93,47 @@ public class ApplicationUser {
     return this.createdAt == this.updatedAt;
   }
 
+  // Security stuff
+  @Override
+  public Collection<? extends GrantedAuthority> getAuthorities() {
+    if (this.role == null || this.role.getAuthorities() == null) {
+      return java.util.Collections.emptySet();
+    }
+    return this.role.getAuthorities().stream()
+        .map(SimpleGrantedAuthority::new)
+        .collect(Collectors.toSet());
+  }
+
+  @Override
+  public boolean isAccountNonExpired() {
+    return true;
+  }
+
+  @Override
+  public boolean isAccountNonLocked() {
+    return true;
+  }
+
+  @Override
+  public boolean isCredentialsNonExpired() {
+    return true;
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return true;
+  }
+
+  @Override
+  public String getUsername() {
+    return this.email;
+  }
+
+  @Override
+  public String getPassword() {
+    return this.password;
+  }
+
   @Builder
   public ApplicationUser(String email, String password, String name, String profilePicture,
       String phoneNumber, LocalDate birthdate, Organization organization, UserRank rank,
@@ -104,5 +147,31 @@ public class ApplicationUser {
     this.organization = organization;
     this.rank = rank;
     this.role = role;
+  }
+
+  @Override
+  public String toString() {
+    String roleInfo = "null";
+    String authoritiesInfo = "null";
+
+    if (this.role != null) {
+      roleInfo = "RolePresent(id=" + this.role.getId() + ")";
+      try {
+        authoritiesInfo = this.role.getAuthorities().toString();
+      } catch (Throwable e) {
+        e.printStackTrace();
+        authoritiesInfo = "Error fetching authorities: " + e.getClass().getSimpleName();
+      }
+    }
+
+    return "ApplicationUser {" +
+        "\n  email='" + email + '\'' +
+        ",\n  name='" + name + '\'' +
+        ",\n  phoneNumber='" + phoneNumber + '\'' +
+        ",\n  organization=" + (organization != null ? "OrgPresent" : "null") +
+        ",\n  rank=" + (rank != null ? "RankPresent" : "null") +
+        ",\n  role=" + roleInfo +
+        ",\n  authorities=" + authoritiesInfo +
+        "\n}";
   }
 }

@@ -69,8 +69,8 @@ public class UserRolesService {
     }
 
     catch (DataIntegrityViolationException e) {
-      logger.warn("Attempted to create UserRole with duplicate unique field: ", e.getMessage());
-      throw new IllegalArgumentException("A UserRole with this name already exists.");
+      logger.warn("Attempted to create UserRole with duplicate unique field or null required field: ", e.getMessage());
+      throw new IllegalArgumentException("A UserRole with this name already exists or a required field is null.");
     } catch (DataAccessException e) {
       logger.error("CRITICAL: Could not reach PostgreSQL on server!", e);
       throw new RuntimeException("Service temporarily unavailable. Please try again later.");

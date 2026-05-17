@@ -6,7 +6,8 @@ import org.springframework.dao.DataAccessException;
 
 import org.sportingscout.scout_bank_backend.entities.Organization;
 import org.sportingscout.scout_bank_backend.repositories.OrganizationsRepository;
-import org.sportingscout.scout_bank_backend.mappers.CreateOrganizationRequest;
+import org.sportingscout.scout_bank_backend.mappers.CreateOrganizationRequestMapper;
+import org.sportingscout.scout_bank_backend.dtos.organizations.CreateOrganizationRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,9 +20,9 @@ import org.slf4j.LoggerFactory;
 public class OrganizationsService {
   private final OrganizationsRepository organizationsRepo;
   private static final Logger logger = LoggerFactory.getLogger(OrganizationsService.class);
-  private final CreateOrganizationRequest requestMapper;
+  private final CreateOrganizationRequestMapper requestMapper;
 
-  public OrganizationsService(OrganizationsRepository organizationsRepo, CreateOrganizationRequest mapper) {
+  public OrganizationsService(OrganizationsRepository organizationsRepo, CreateOrganizationRequestMapper mapper) {
     this.organizationsRepo = organizationsRepo;
     this.requestMapper = mapper;
   }
@@ -91,12 +92,12 @@ public class OrganizationsService {
     }
   }
 
-  public void updateOrganizationInformation(Long id, String name, String description) {
+  public void updateOrganizationInformation(Long id, CreateOrganizationRequest request) {
     try {
       Organization existingOrganization = organizationsRepo.findById(id)
           .orElseThrow(() -> new NoSuchElementException("User not found with id: " + id));
-      existingOrganization.setName(name);
-      existingOrganization.setDescription(description);
+      existingOrganization.setName(request.name());
+      existingOrganization.setDescription(request.description());
 
       organizationsRepo.save(existingOrganization);
     } catch (DataIntegrityViolationException e) {

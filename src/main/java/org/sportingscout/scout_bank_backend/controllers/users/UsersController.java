@@ -4,7 +4,9 @@ import jakarta.validation.Valid;
 import org.sportingscout.scout_bank_backend.dtos.users.CreateUserRequest;
 import org.sportingscout.scout_bank_backend.dtos.users.UpdateUserRequest;
 import org.sportingscout.scout_bank_backend.dtos.users.AllUsersResponse;
+import org.sportingscout.scout_bank_backend.dtos.users.SingleUserResponse;
 import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
+import org.sportingscout.scout_bank_backend.mappers.users.SingleUserResponseMapper;
 import org.sportingscout.scout_bank_backend.services.users.UsersService;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,9 +29,12 @@ import java.util.NoSuchElementException;
 @RequestMapping("/api/users")
 public class UsersController {
   private final UsersService usersService;
+  private final SingleUserResponseMapper singleUserResponseMapper;
 
-  public UsersController(UsersService usersService) {
+  public UsersController(UsersService usersService,
+      SingleUserResponseMapper singleUserResponseMapper) {
     this.usersService = usersService;
+    this.singleUserResponseMapper = singleUserResponseMapper;
   }
 
   @GetMapping
@@ -39,9 +44,10 @@ public class UsersController {
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<ApplicationUser> getUsers(@PathVariable Long id) {
+  @PreAuthorize("@auth.hasId(#id)")
+  public ResponseEntity<SingleUserResponse> getUsers(@PathVariable Long id) {
     return usersService.getUserById(id)
-        .map(user -> ResponseEntity.ok(user))
+        .map(user -> ResponseEntity.ok(singleUserResponseMapper.toResponse(user)))
         .orElse(ResponseEntity.notFound().build());
   }
 

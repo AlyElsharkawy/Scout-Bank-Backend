@@ -82,7 +82,7 @@ public class UsersService {
       usersRepo.save(entity);
       logger.debug("Successfully created user | ID: {}, Email: {}", entity.getId(), request.email());
     } catch (DataIntegrityViolationException e) {
-      logger.warn("Attempted to create user with duplicate unique field: ", e.getMessage());
+      logger.warn("Attempted to create user with duplicate unique field or null required field: ", e.getMessage());
       throw new IllegalArgumentException("A user with this email or phone number already exists.");
     } catch (DataAccessException e) {
       logger.error("CRITICAL: Could not reach PostgreSQL on server!", e);

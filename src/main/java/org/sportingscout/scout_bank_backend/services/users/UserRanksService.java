@@ -46,8 +46,8 @@ public class UserRanksService {
       UserRank rank = createRequestMapper.toEntity(request);
       ranksRepo.save(rank);
     } catch (DataIntegrityViolationException e) {
-      logger.warn("Attempted to create UserRank with duplicate unique name: ", e.getMessage());
-      throw new IllegalArgumentException("A UserRank with this name already exists.");
+      logger.warn("Attempted to create UserRank with duplicate unique name or null required field: ", e.getMessage());
+      throw new IllegalArgumentException("A UserRank with this name already exists or required field is null.");
     } catch (DataAccessException e) {
       logger.error("CRITICAL: Could not reach PostgreSQL on server!", e);
       throw new RuntimeException("Service temporarily unavailable. Please try again later.");

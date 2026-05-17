@@ -16,9 +16,10 @@ public record CreateUserRequest(
 
     @Pattern(regexp = "^01[0125]\\d{8}$", message = "Invalid Egyptian mobile number format") @NotBlank(message = "Phone number cannot be empty or completely whitespace") String phoneNumber,
 
-    @NotBlank(message = "Password cannot be empty or completely whitespace") @Size(min = 8, message = "Password must at least be 8 characters long") @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "Password must contain at least one digit, lowercase character, and uppercase character") String password,
+    @NotBlank(message = "Password cannot be empty or completely whitespace") @Size(min = 8, message = "Password must at least be 8 characters long") @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#])[A-Za-z\\d@$!%*?&#]{8,}$", message = "Password must contain at least one digit, lowercase character, and uppercase character") String password,
 
-    List<String> authorities,
-
-    Long organizationId) {
+    Long organizationId,
+    Long roleId,
+    Long rankId,
+    String birthDate) {
 }

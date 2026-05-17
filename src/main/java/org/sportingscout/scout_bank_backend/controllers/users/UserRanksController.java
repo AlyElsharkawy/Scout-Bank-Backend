@@ -35,7 +35,7 @@ public class UserRanksController {
 
   @PostMapping
   @PreAuthorize("@auth.has('rank:create')")
-  public ResponseEntity<Void> createRank(CreateUserRankRequest request) {
+  public ResponseEntity<Void> createRank(@Valid @RequestBody CreateUserRankRequest request) {
     service.createRank(request);
     return ResponseEntity.status(HttpStatus.CREATED).build();
   }
