@@ -18,6 +18,9 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.validation.constraints.NotBlank;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Builder;
@@ -81,6 +84,7 @@ public class ArticleVersion {
 
   @ManyToMany
   @JoinTable(name = "article_version_tags", joinColumns = @JoinColumn(name = "article_version_id"), inverseJoinColumns = @JoinColumn(name = "article_tag_id"))
+  @OnDelete(action = OnDeleteAction.CASCADE)
   private Set<ArticleTag> tags = new HashSet<>();
 
   @ElementCollection

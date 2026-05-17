@@ -13,7 +13,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import org.springframework.validation.method.ParameterErrors;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Set;
@@ -121,7 +120,7 @@ public class Bootstrap implements CommandLineRunner {
           "Reviewers inherit all the article generation and media upload capabilities of a Writer, with the addition of the authority to evaluate, approve, or reject newly drafted submissions before they become public.",
           Set.of(
               Permissions.ARTICLE_EDIT, Permissions.ARTICLE_WRITE, Permissions.ARTICLE_REVIEW,
-              Permissions.MEDIA_UPLOAD));
+              Permissions.MEDIA_UPLOAD, Permissions.TAG_EDIT, Permissions.TAG_CREATE));
 
       UserRole supervisorRole = new UserRole("Supervisor",
           "Supervisors manage daily operations and organizational structures. This role has the authority to oversee content life cycles (including article deletion), create and manage organizational units, and modify user role assignments within their scope.",
@@ -129,7 +128,8 @@ public class Bootstrap implements CommandLineRunner {
               Permissions.ARTICLE_EDIT, Permissions.ARTICLE_WRITE, Permissions.ARTICLE_REVIEW,
               Permissions.ARTICLE_DELETE, Permissions.MEDIA_UPLOAD, Permissions.USER_VIEW,
               Permissions.USER_ROLE_EDIT, Permissions.ORGANIZATION_CREATE,
-              Permissions.ORGANIZATION_EDIT));
+              Permissions.ORGANIZATION_EDIT, Permissions.TAG_CREATE, Permissions.TAG_EDIT,
+              Permissions.TAG_DELETE));
 
       UserRole adminRole = new UserRole("Admin",
           "Administrators hold global administrative control over the platform. Administrators possess full operational rights, including system-wide configuration management, user rank adjustments, and the authority to execute destructive actions such as deleting user profiles or entire organizations.",
@@ -139,7 +139,8 @@ public class Bootstrap implements CommandLineRunner {
               Permissions.USER_DELETE, Permissions.ORGANIZATION_CREATE, Permissions.ORGANIZATION_EDIT,
               Permissions.ORGANIZATION_DELETE, Permissions.USER_ROLE_EDIT, Permissions.USER_RANK_EDIT,
               Permissions.ROLE_CREATE, Permissions.ROLE_EDIT, Permissions.ROLE_DELETE,
-              Permissions.RANK_CREATE, Permissions.RANK_EDIT, Permissions.RANK_DELETE));
+              Permissions.RANK_CREATE, Permissions.RANK_EDIT, Permissions.RANK_DELETE,
+              Permissions.TAG_DELETE, Permissions.TAG_EDIT, Permissions.TAG_CREATE));
 
       userRolesRepo.save(viewerRole);
       userRolesRepo.save(editorRole);

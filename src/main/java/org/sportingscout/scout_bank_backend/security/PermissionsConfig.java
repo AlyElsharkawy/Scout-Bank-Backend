@@ -27,8 +27,6 @@ public class PermissionsConfig {
 
   public boolean hasId(Long id) {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-    System.out.println("EXPECTED ID VALUE: " + id);
-    System.out.println("IS Authenticated? " + auth.isAuthenticated());
     if (auth == null || !auth.isAuthenticated()) {
       return false;
     }
@@ -37,7 +35,6 @@ public class PermissionsConfig {
     try {
       principal = auth.getPrincipal();
     } catch (Throwable e) {
-      System.out.println("Ah come on!");
       e.printStackTrace();
     }
 

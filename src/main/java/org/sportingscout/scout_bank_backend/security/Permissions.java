@@ -7,6 +7,11 @@ public class Permissions {
   public static final String ARTICLE_DELETE = "article:delete";
   public static final String ARTICLE_REVIEW = "article:review";
 
+  // Tag permissions
+  public static final String TAG_CREATE = "tag:create";
+  public static final String TAG_EDIT = "tag:edit";
+  public static final String TAG_DELETE = "tag:delete";
+
   // User permissions
   public static final String USER_VIEW = "user:view";
   public static final String USER_DELETE = "user:delete";

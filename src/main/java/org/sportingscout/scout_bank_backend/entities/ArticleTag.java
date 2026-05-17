@@ -56,8 +56,7 @@ public class ArticleTag {
   }
 
   @Builder
-  public ArticleTag(String name, ApplicationUser creator) {
+  public ArticleTag(String name) {
     this.name = name;
-    this.createdBy = creator;
   }
 }

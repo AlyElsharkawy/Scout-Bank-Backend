@@ -95,7 +95,7 @@ public class OrganizationsService {
   public void updateOrganizationInformation(Long id, CreateOrganizationRequest request) {
     try {
       Organization existingOrganization = organizationsRepo.findById(id)
-          .orElseThrow(() -> new NoSuchElementException("User not found with id: " + id));
+          .orElseThrow(() -> new NoSuchElementException("Organization not found with id: " + id));
       existingOrganization.setName(request.name());
       existingOrganization.setDescription(request.description());
 
