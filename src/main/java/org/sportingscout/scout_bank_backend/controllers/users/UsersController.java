@@ -21,8 +21,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.User;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -55,6 +59,32 @@ public class UsersController {
   public ResponseEntity<Void> createUser(@Valid @RequestBody CreateUserRequest request) {
     usersService.createUser(request);
     return ResponseEntity.status(HttpStatus.CREATED).build();
+  }
+
+  @PostMapping("/login")
+  public ResponseEntity<Long> login() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth == null || !auth.isAuthenticated()) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+    Object principal = null;
+    try {
+      principal = auth.getPrincipal();
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
+
+    if (principal instanceof User springUser) {
+      String email = springUser.getUsername();
+
+      Optional<ApplicationUser> temp = usersService.getUserByEmail(email);
+      if (temp.isPresent()) {
+        return ResponseEntity.ok(temp.get().getId());
+      }
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
   }
 
   @PutMapping("/{id}")

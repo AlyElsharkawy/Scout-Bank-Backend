@@ -61,6 +61,20 @@ public class UsersService {
     }
   }
 
+  public Optional<ApplicationUser> getUserByEmail(String email) {
+    try {
+      logger.debug("Attempting to fetch ApplicationUser with email: {}", email);
+      Optional<ApplicationUser> temp = usersRepo.findByEmail(email);
+      return temp;
+    } catch (DataAccessException e) {
+      logger.error("Database error while fetching user with email {}: ", email, e.getMessage());
+      throw e;
+    } catch (Exception e) {
+      logger.error("Unexpected error during user fetch with email: {}", email, e);
+      throw e;
+    }
+  }
+
   public List<AllUsersResponse> getAllUsers() {
     try {
       logger.debug("Attempting to fetch all ApplicationUser instances");

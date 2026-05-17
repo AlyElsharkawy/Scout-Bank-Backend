@@ -2,8 +2,8 @@ package org.sportingscout.scout_bank_backend.security;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Component;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.stereotype.Component;
 
 import org.sportingscout.scout_bank_backend.repositories.UsersRepository;
 

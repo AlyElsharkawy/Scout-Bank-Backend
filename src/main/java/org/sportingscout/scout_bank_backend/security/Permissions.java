@@ -36,4 +36,7 @@ public class Permissions {
   public static final String ROLE_CREATE = "role:create";
   public static final String ROLE_EDIT = "role:edit";
   public static final String ROLE_DELETE = "role:delete";
+
+  // Miscellaneous permissions
+  public static final String DOCUMENTATION_ACCESS = "docs:access";
 }

@@ -1,7 +1,6 @@
 package org.sportingscout.scout_bank_backend.controllers.articles;
 
 import org.sportingscout.scout_bank_backend.services.articles.ArticleTagsService;
-import org.apache.catalina.connector.Response;
 import org.sportingscout.scout_bank_backend.entities.ArticleTag;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -42,18 +41,21 @@ public class ArticleTagsController {
   }
 
   @PostMapping
+  @PreAuthorize("@auth.has('tag:create')")
   public ResponseEntity<Void> createTag(@Valid @RequestBody String name) {
     service.createTag(name);
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("@auth.has('tag:delete')")
   public ResponseEntity<ArticleTag> deleteTagById(@PathVariable Long id) {
     service.deleteById(id);
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("@auth.has('tag:edit')")
   public ResponseEntity<Void> updateTag(Long id, String newName) {
     service.editTag(id, newName);
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

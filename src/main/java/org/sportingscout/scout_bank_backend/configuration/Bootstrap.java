@@ -142,12 +142,25 @@ public class Bootstrap implements CommandLineRunner {
               Permissions.RANK_CREATE, Permissions.RANK_EDIT, Permissions.RANK_DELETE,
               Permissions.TAG_DELETE, Permissions.TAG_EDIT, Permissions.TAG_CREATE));
 
+      UserRole rootRole = new UserRole("Root",
+          "Root users have as much power as admin users. However, they can also access the site's documentation. They are intended to the first line of defence and work closely with developers when a bug is discovered",
+          Set.of(
+              Permissions.ARTICLE_EDIT, Permissions.ARTICLE_WRITE, Permissions.ARTICLE_REVIEW,
+              Permissions.ARTICLE_DELETE, Permissions.MEDIA_UPLOAD, Permissions.USER_VIEW,
+              Permissions.USER_DELETE, Permissions.ORGANIZATION_CREATE, Permissions.ORGANIZATION_EDIT,
+              Permissions.ORGANIZATION_DELETE, Permissions.USER_ROLE_EDIT, Permissions.USER_RANK_EDIT,
+              Permissions.ROLE_CREATE, Permissions.ROLE_EDIT, Permissions.ROLE_DELETE,
+              Permissions.RANK_CREATE, Permissions.RANK_EDIT, Permissions.RANK_DELETE,
+              Permissions.TAG_DELETE, Permissions.TAG_EDIT, Permissions.TAG_CREATE,
+              Permissions.DOCUMENTATION_ACCESS));
+
       userRolesRepo.save(viewerRole);
       userRolesRepo.save(editorRole);
       userRolesRepo.save(writerRole);
       userRolesRepo.save(reviewerRole);
       userRolesRepo.save(supervisorRole);
       userRolesRepo.save(adminRole);
+      userRolesRepo.save(rootRole);
     }
 
     Optional<Organization> tempOrganization = organizationsRepo.findByName("Sporting Scouts");
