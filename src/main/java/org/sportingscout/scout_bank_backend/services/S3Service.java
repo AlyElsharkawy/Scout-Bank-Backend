@@ -76,6 +76,7 @@ public class S3Service {
           .stream()
           .map(S3Object::key)
           .collect(Collectors.toList());
+
     } catch (S3Exception e) {
       logger.error("S3 Server Error - Listing {}: {} | Status: {}", prefix, e.awsErrorDetails().errorMessage(),
           e.statusCode());

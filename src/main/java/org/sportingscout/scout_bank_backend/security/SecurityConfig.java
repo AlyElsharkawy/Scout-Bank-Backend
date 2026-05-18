@@ -52,11 +52,6 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/roles").permitAll()
             .requestMatchers(HttpMethod.PUT, "/api/organizations").permitAll()
             .requestMatchers(HttpMethod.PUT, "/api/organizations").permitAll()
-            .requestMatchers(
-                "/v3/api-docs/**",
-                "/swagger-ui/**",
-                "/swagger-ui.html")
-            .permitAll()
             .anyRequest().authenticated());
 
     return http.build();

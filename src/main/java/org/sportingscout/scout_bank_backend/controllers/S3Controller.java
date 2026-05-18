@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
@@ -45,6 +44,28 @@ public class S3Controller {
 
     service.uploadFile(key, file);
     return ResponseEntity.ok(key);
+  }
+
+  @PutMapping("/overwrite")
+  public ResponseEntity<Void> overwriteFile(
+      @RequestParam("file") MultipartFile file,
+      @RequestParam("key") String key) {
+    service.uploadFile(key, file);
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+  }
+
+  @GetMapping
+  public ResponseEntity<List<String>> listFiles(
+      @RequestParam(name = "prefix", required = false, defaultValue = "") String prefix) {
+    return ResponseEntity.ok(service.listFiles(prefix));
+  }
+
+  @DeleteMapping
+  @PreAuthorize("@auth.has('media:delete')")
+  public ResponseEntity<Void> deleteFile(
+      @RequestParam(name = "key", required = false, defaultValue = "") String key) {
+    service.deleteFile(key);
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
   @ExceptionHandler(NoSuchElementException.class)
