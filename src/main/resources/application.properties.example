@@ -14,3 +14,10 @@ spring.datasource.driver-class-name=org.postgresql.Driver
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 spring.jpa.show-sql=false
 spring.datasource.connection-properties=charSet=UTF-8
+
+bootstrap.root-user=true
+bootstrap.users=true
+bootstrap.roles=true
+bootstrap.root-password=ADD_PASSWORD_HERE
+bootstrap.organizations=true
+bootstrap.ranks=true

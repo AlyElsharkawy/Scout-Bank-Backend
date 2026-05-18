@@ -5,8 +5,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 public record SingleUserResponse(
-    String email,
     String name,
+    String email,
     String profilePicture,
     String phoneNumber,
     Long organizationId,
