@@ -1,5 +1,7 @@
 spring.application.name=scout-bank-backend
 
+server.forward-headers-strategy=framework
+
 s3.endpoint=
 s3.region=
 s3.access-key=

@@ -2,6 +2,7 @@ package org.sportingscout.scout_bank_backend.services;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -16,8 +17,9 @@ import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
-import java.io.File;
 import java.util.List;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -34,14 +36,17 @@ public class S3Service {
     this.bucketName = bucketName;
   }
 
-  public void uploadFile(String keyName, File file) {
+  public void uploadFile(String keyName, MultipartFile multiPartFile) {
     try {
+      InputStream inputStream = multiPartFile.getInputStream();
+      long contentLength = multiPartFile.getSize();
       PutObjectRequest request = PutObjectRequest.builder()
           .bucket(this.bucketName)
+          .contentType(multiPartFile.getContentType())
           .key(keyName)
           .build();
 
-      this.client.putObject(request, RequestBody.fromFile(file));
+      this.client.putObject(request, RequestBody.fromInputStream(inputStream, contentLength));
       logger.debug("Successfully uploaded {} to S3", keyName);
     } catch (S3Exception e) {
       logger.error("S3 Server Error - Uploading {}: {} | Status: {}", keyName, e.awsErrorDetails().errorMessage(),
@@ -50,6 +55,10 @@ public class S3Service {
     } catch (SdkException e) {
       logger.error("Network Error - Uploading | Could not reach S3: {}", keyName, e.getMessage());
       throw new RuntimeException("Failed to connect to S3", e);
+    } catch (IOException e) {
+      // Fails if the client disconnects mid-upload or the internal buffer breaks
+      logger.error("Failed to read bytes from the incoming multipart request for key: {}", keyName, e);
+      throw new RuntimeException("Failed to read upload stream", e);
     }
   }
 

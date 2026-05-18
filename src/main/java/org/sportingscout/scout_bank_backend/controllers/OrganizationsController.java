@@ -1,6 +1,5 @@
 package org.sportingscout.scout_bank_backend.controllers;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.Valid;
 
 import org.sportingscout.scout_bank_backend.entities.Organization;
