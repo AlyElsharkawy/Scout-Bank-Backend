@@ -35,6 +35,8 @@ import java.util.Set;
 import java.util.HashSet;
 import java.time.Instant;
 
+import com.github.f4b6a3.uuid.UuidCreator;
+
 @Entity
 @Getter
 @EntityListeners(AuditingEntityListener.class)
@@ -111,7 +113,7 @@ public class ArticleVersion {
   @PrePersist
   protected void onCreate() {
     if (this.externalId == null) {
-      this.externalId = UUID.randomUUID();
+      this.externalId = UuidCreator.getTimeOrdered();
     }
     Instant currentInstant = Instant.now();
     this.createdAt = currentInstant;

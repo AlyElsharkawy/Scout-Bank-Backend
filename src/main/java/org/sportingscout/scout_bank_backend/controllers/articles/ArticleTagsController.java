@@ -14,8 +14,10 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import jakarta.validation.Valid;
 
@@ -59,5 +61,20 @@ public class ArticleTagsController {
   public ResponseEntity<Void> updateTag(Long id, String newName) {
     service.editTag(id, newName);
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+  }
+
+  @ExceptionHandler(NoSuchElementException.class)
+  public ResponseEntity<String> handleNotFound(NoSuchElementException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+  }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<String> handleBadRequest(IllegalArgumentException e) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+  }
+
+  @ExceptionHandler(RuntimeException.class)
+  public ResponseEntity<String> handleInternalError(RuntimeException e) {
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
   }
 }

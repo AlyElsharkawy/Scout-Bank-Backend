@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
-@RequestMapping("/media")
+@RequestMapping("/api/media")
 public class S3Controller {
   private final S3Service service;
 

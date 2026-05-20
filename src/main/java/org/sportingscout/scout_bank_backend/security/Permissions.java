@@ -37,6 +37,11 @@ public class Permissions {
   public static final String ROLE_EDIT = "role:edit";
   public static final String ROLE_DELETE = "role:delete";
 
+  // Article Type Permissions
+  public static final String TYPE_CREATE = "type:create";
+  public static final String TYPE_EDIT = "type:edit";
+  public static final String TYPE_DELETE = "type:delete";
+
   // Miscellaneous permissions
   public static final String DOCUMENTATION_ACCESS = "docs:access";
 }

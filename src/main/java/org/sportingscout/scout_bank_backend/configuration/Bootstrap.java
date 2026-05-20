@@ -9,10 +9,12 @@ import org.sportingscout.scout_bank_backend.repositories.OrganizationsRepository
 import org.sportingscout.scout_bank_backend.repositories.UserRanksRepository;
 import org.sportingscout.scout_bank_backend.repositories.UserRolesRepository;
 import org.sportingscout.scout_bank_backend.security.Permissions;
+import org.sportingscout.scout_bank_backend.security.PermissionsConfig;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.method.ParameterErrors;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Set;
@@ -141,7 +143,8 @@ public class Bootstrap implements CommandLineRunner {
               Permissions.ORGANIZATION_DELETE, Permissions.USER_ROLE_EDIT, Permissions.USER_RANK_EDIT,
               Permissions.ROLE_CREATE, Permissions.ROLE_EDIT, Permissions.ROLE_DELETE,
               Permissions.RANK_CREATE, Permissions.RANK_EDIT, Permissions.RANK_DELETE,
-              Permissions.TAG_DELETE, Permissions.TAG_EDIT, Permissions.TAG_CREATE));
+              Permissions.TAG_DELETE, Permissions.TAG_EDIT, Permissions.TAG_CREATE,
+              Permissions.TYPE_CREATE));
 
       UserRole rootRole = new UserRole("Root",
           "Root users have as much power as admin users. However, they can also access the site's documentation. They are intended to the first line of defence and work closely with developers when a bug is discovered",
@@ -155,7 +158,8 @@ public class Bootstrap implements CommandLineRunner {
               Permissions.ROLE_CREATE, Permissions.ROLE_EDIT, Permissions.ROLE_DELETE,
               Permissions.RANK_CREATE, Permissions.RANK_EDIT, Permissions.RANK_DELETE,
               Permissions.TAG_DELETE, Permissions.TAG_EDIT, Permissions.TAG_CREATE,
-              Permissions.DOCUMENTATION_ACCESS));
+              Permissions.DOCUMENTATION_ACCESS,
+              Permissions.TYPE_EDIT, Permissions.TYPE_CREATE, Permissions.TYPE_DELETE));
 
       userRolesRepo.save(viewerRole);
       userRolesRepo.save(editorRole);
