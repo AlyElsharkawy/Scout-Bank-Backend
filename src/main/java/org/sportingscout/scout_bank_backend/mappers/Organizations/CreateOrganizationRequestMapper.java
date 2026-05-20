@@ -1,4 +1,4 @@
-package org.sportingscout.scout_bank_backend.mappers;
+package org.sportingscout.scout_bank_backend.mappers.Organizations;
 
 import org.sportingscout.scout_bank_backend.entities.Organization;
 import org.sportingscout.scout_bank_backend.dtos.organizations.CreateOrganizationRequest;

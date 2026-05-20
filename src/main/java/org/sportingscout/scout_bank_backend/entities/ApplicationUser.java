@@ -80,8 +80,9 @@ public class ApplicationUser implements UserDetails {
 
   @PrePersist
   protected void onCreate() {
-    this.createdAt = Instant.now();
-    this.updatedAt = Instant.now();
+    Instant currentInstant = Instant.now();
+    this.createdAt = currentInstant;
+    this.updatedAt = currentInstant;
   }
 
   @PreUpdate

@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataAccessException;
 
-import org.sportingscout.scout_bank_backend.entities.Article;
 import org.sportingscout.scout_bank_backend.entities.ArticleTag;
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleTagsRepository;
 

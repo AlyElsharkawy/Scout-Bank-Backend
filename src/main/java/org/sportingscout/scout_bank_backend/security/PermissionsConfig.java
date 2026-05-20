@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
 import org.sportingscout.scout_bank_backend.repositories.UsersRepository;
+import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
 
 @Component("auth")
 public class PermissionsConfig {
@@ -46,5 +47,25 @@ public class PermissionsConfig {
           .orElse(false);
     }
     return false;
+  }
+
+  public ApplicationUser getAuthenticatedUser() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth == null || !auth.isAuthenticated()) {
+      return null;
+    }
+
+    Object principal = null;
+    try {
+      principal = auth.getPrincipal();
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
+
+    if (principal instanceof User springUser) {
+      String email = springUser.getUsername();
+      return usersRepo.findByEmail(email).orElse(null);
+    }
+    return null;
   }
 }

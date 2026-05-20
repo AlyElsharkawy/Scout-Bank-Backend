@@ -1,6 +1,11 @@
 package org.sportingscout.scout_bank_backend.entities;
 
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.GeneratedValue;
@@ -22,6 +27,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
+@EntityListeners(AuditingEntityListener.class)
 public class Article {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,13 +44,14 @@ public class Article {
   private ArticleVersion liveArticle;
 
   @Column(nullable = false, updatable = false)
+  @CreatedBy
   private Instant createdAt;
 
   @Column(nullable = false, updatable = false)
   private Instant updatedAt;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @Setter
+  @LastModifiedBy
   private ApplicationUser updatedBy;
 
   @PrePersist
@@ -52,8 +59,9 @@ public class Article {
     if (this.externalId == null) {
       this.externalId = UUID.randomUUID();
     }
-    this.updatedAt = Instant.now();
-    this.createdAt = Instant.now();
+    Instant currentInstant = Instant.now();
+    this.updatedAt = currentInstant;
+    this.createdAt = currentInstant;
   }
 
   @PreUpdate

@@ -6,7 +6,7 @@ import org.springframework.dao.DataAccessException;
 
 import org.sportingscout.scout_bank_backend.entities.Organization;
 import org.sportingscout.scout_bank_backend.repositories.OrganizationsRepository;
-import org.sportingscout.scout_bank_backend.mappers.CreateOrganizationRequestMapper;
+import org.sportingscout.scout_bank_backend.mappers.Organizations.CreateOrganizationRequestMapper;
 import org.sportingscout.scout_bank_backend.dtos.organizations.CreateOrganizationRequest;
 
 import java.util.List;

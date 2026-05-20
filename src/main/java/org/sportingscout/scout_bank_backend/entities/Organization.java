@@ -1,10 +1,15 @@
 package org.sportingscout.scout_bank_backend.entities;
 
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import jakarta.persistence.Id;
 import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -20,10 +25,15 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 public class Organization {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,16 +55,23 @@ public class Organization {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "created_by_id")
+  @CreatedBy
+  @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+  @JsonIdentityReference(alwaysAsId = true)
   private ApplicationUser createdBy;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "updated_by_id")
+  @LastModifiedBy
+  @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+  @JsonIdentityReference(alwaysAsId = true)
   private ApplicationUser updatedBy;
 
   @PrePersist
   protected void onCreate() {
-    this.createdAt = Instant.now();
-    this.updatedAt = Instant.now();
+    Instant currentInsntant = Instant.now();
+    this.createdAt = currentInsntant;
+    this.updatedAt = currentInsntant;
   }
 
   @PreUpdate

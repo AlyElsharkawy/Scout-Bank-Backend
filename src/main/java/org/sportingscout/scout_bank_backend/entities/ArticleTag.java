@@ -1,7 +1,12 @@
 package org.sportingscout.scout_bank_backend.entities;
 
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
@@ -21,6 +26,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity(name = "article_version_tag")
+@EntityListeners(AuditingEntityListener.class)
 public class ArticleTag {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,12 +44,20 @@ public class ArticleTag {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "created_by", updatable = false, nullable = false)
+  @CreatedBy
   private ApplicationUser createdBy;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "updated_by", nullable = false)
+  @LastModifiedBy
+  private ApplicationUser updatedBy;
 
   @PrePersist
   protected void onCreate() {
-    this.createdAt = Instant.now();
-    this.updatedAt = Instant.now();
+    Instant currentInstant = Instant.now();
+    this.createdAt = currentInstant;
+    this.updatedAt = currentInstant;
+
   }
 
   @PreUpdate
