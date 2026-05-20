@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
@@ -66,6 +65,12 @@ public class S3Controller {
       @RequestParam(name = "key", required = false, defaultValue = "") String key) {
     service.deleteFile(key);
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+  }
+
+  @GetMapping("/url")
+  public ResponseEntity<String> getPresignedUrl(
+      @RequestParam(name = "key", required = true) String keyName) {
+    return ResponseEntity.ok(service.getPresignedUrl(keyName));
   }
 
   @ExceptionHandler(NoSuchElementException.class)

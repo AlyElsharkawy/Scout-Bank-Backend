@@ -13,14 +13,20 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.awscore.presigner.PresignedRequest;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
+import software.amazon.awssdk.utils.IoUtils;
 
 import java.util.List;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.stream.Collectors;
+import java.time.Duration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,11 +35,14 @@ import org.slf4j.LoggerFactory;
 public class S3Service {
   private final S3Client client;
   private final String bucketName;
+  private final S3Presigner presigner;
   private static final Logger logger = LoggerFactory.getLogger(S3Service.class);
 
-  public S3Service(S3Client client, @Value("${s3.bucket-name}") String bucketName) {
+  public S3Service(S3Client client, @Value("${s3.bucket-name}") String bucketName,
+      S3Presigner presigner) {
     this.client = client;
     this.bucketName = bucketName;
+    this.presigner = presigner;
   }
 
   public void uploadFile(String keyName, MultipartFile multiPartFile) {
@@ -123,6 +132,34 @@ public class S3Service {
     } catch (Exception e) {
       logger.error("Failed to download file {] from S3: {}", keyName, e.getMessage());
       throw new RuntimeException("Could not retrieve file", e);
+    }
+  }
+
+  public String getPresignedUrl(String keyName) {
+    try {
+      GetObjectRequest objectRequest = GetObjectRequest.builder()
+          .bucket(this.bucketName)
+          .key(keyName)
+          .build();
+
+      GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+          .signatureDuration(Duration.ofMinutes(2))
+          .getObjectRequest(objectRequest)
+          .build();
+
+      PresignedGetObjectRequest presignedRequest = presigner.presignGetObject(presignRequest);
+      String urLResult = presignedRequest.url().toExternalForm();
+
+      logger.debug("Generated presigned URL for key {} at {} from the following HTTP request {}", keyName, urLResult,
+          presignedRequest.httpRequest().method());
+
+      return urLResult;
+    } catch (SdkException e) {
+      logger.error("AWS SDK configuration error. Could not created presigned GET URL for key {}", keyName);
+      throw new RuntimeException("Internal Storage Configuration Error");
+    } catch (Exception e) {
+      logger.error("Unknown error while creating presigned GET URL for key {}", keyName);
+      throw new RuntimeException("Unknown Internal Storage Error");
     }
   }
 }
