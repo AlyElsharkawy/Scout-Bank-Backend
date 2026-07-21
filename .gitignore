@@ -1,5 +1,11 @@
 todo.txt
 Roles.txt
+s3-ls.sh
+s3-get.sh
+s3-put.sh
+s3-delete.sh
+s3-empty.sh
+lorem.txt
 src/main/resources/application.properties
 HELP.md
 target/

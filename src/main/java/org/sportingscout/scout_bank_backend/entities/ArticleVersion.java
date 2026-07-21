@@ -95,16 +95,6 @@ public class ArticleVersion {
   @Singular
   private Set<ArticleTag> tags = new HashSet<>();
 
-  @ElementCollection
-  @CollectionTable(name = "article_version_images", joinColumns = @JoinColumn(name = "article_version_id"))
-  @Singular
-  private Set<String> imageNames = new HashSet<>();
-
-  @ElementCollection
-  @CollectionTable(name = "article_version_videos", joinColumns = @JoinColumn(name = "article_version_id"))
-  @Singular
-  private Set<String> videoNames = new HashSet<>();
-
   public void setStatus(ApprovalStatus status, ApplicationUser reviewer) {
     this.reviewer = reviewer;
     this.status = status;
@@ -132,7 +122,7 @@ public class ArticleVersion {
   @Builder
   public ArticleVersion(ApplicationUser author, ArticleType type, Set<ApplicationUser> editors, String title,
       String content,
-      int majorVersion, int minorVersion, Set<ArticleTag> tags, Set<String> imageNames, Set<String> videoNames) {
+      int majorVersion, int minorVersion, Set<ArticleTag> tags) {
     this.author = author;
     this.type = type;
     this.editors = editors;
@@ -142,7 +132,5 @@ public class ArticleVersion {
     this.minorVersion = minorVersion;
     this.majorVersion = majorVersion;
     this.tags = tags;
-    this.videoNames = videoNames;
-    this.imageNames = imageNames;
   }
 }

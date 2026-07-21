@@ -99,7 +99,7 @@ public class Bootstrap implements CommandLineRunner {
     }
 
     if (createOrganizations) {
-      Organization sportingScout = new Organization("Sporting Scouts",
+      Organization sportingScout = new Organization("Alexandria Sporting Scouts",
           "The Sporting Scouts are an Alexandria-based scouting organization headquartered at Sporting Club, Alexandria");
       organizationsRepo.save(sportingScout);
     }
@@ -170,7 +170,7 @@ public class Bootstrap implements CommandLineRunner {
       userRolesRepo.save(rootRole);
     }
 
-    Optional<Organization> tempOrganization = organizationsRepo.findByName("Sporting Scouts");
+    Optional<Organization> tempOrganization = organizationsRepo.findByName("Alexandria Sporting Scouts");
     Organization rootOrganization = tempOrganization.isPresent() ? tempOrganization.get() : null;
 
     Optional<UserRank> tempRank = userRanksRepo.findByName("Rovers");

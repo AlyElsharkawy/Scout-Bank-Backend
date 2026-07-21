@@ -84,4 +84,13 @@ public class Organization {
     this.name = name;
     this.description = description;
   }
+
+  public String getInternalName() {
+    String result = this.name
+        .trim()
+        .toLowerCase()
+        .replaceAll("[^a-z0-0\\s-]", "")
+        .replaceAll("\\s+", "-");
+    return result;
+  }
 }

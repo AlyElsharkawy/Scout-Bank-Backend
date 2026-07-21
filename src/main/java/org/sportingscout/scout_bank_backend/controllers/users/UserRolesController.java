@@ -51,19 +51,4 @@ public class UserRolesController {
     service.updateRole(id, request);
     return ResponseEntity.noContent().build();
   }
-
-  @ExceptionHandler(NoSuchElementException.class)
-  public ResponseEntity<String> handleNotFound(NoSuchElementException e) {
-    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-  }
-
-  @ExceptionHandler(IllegalArgumentException.class)
-  public ResponseEntity<String> handleBadRequest(IllegalArgumentException e) {
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-  }
-
-  @ExceptionHandler(RuntimeException.class)
-  public ResponseEntity<String> handleInternalError(RuntimeException e) {
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-  }
 }

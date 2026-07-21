@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ArticleVersionsRepository extends JpaRepository<ArticleVersion, Long> {
+public interface ArticleVersionRepository extends JpaRepository<ArticleVersion, Long> {
   Optional<ArticleVersion> findById(Long id);
 
   Optional<ArticleVersion> findByExternalId(UUID id);

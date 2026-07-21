@@ -10,14 +10,13 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MultipartFile;
+
 import org.springframework.http.MediaType;
 
 import org.sportingscout.scout_bank_backend.services.S3Service;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/media")
@@ -28,28 +27,21 @@ public class S3Controller {
     this.service = service;
   }
 
-  // TODO: Ofcourse, we will format the string
-  // That is to be done later though
-  // I will prioritize basic functionality now
   @PreAuthorize("@auth.has('media:upload')")
   @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<String> uploadFile(
       @RequestParam("file") MultipartFile file,
-      @RequestParam("key") String key) {
+      @RequestParam("fileName") String fileName) {
 
-    if (file.isEmpty() || key == null || key.isBlank()) {
-      return ResponseEntity.badRequest().build();
-    }
-
-    service.uploadFile(key, file);
-    return ResponseEntity.ok(key);
+    String keyName = service.uploadArticleFile(fileName, file);
+    return ResponseEntity.ok(keyName);
   }
 
   @PutMapping("/overwrite")
   public ResponseEntity<Void> overwriteFile(
       @RequestParam("file") MultipartFile file,
       @RequestParam("key") String key) {
-    service.uploadFile(key, file);
+    service.uploadArticleFile(key, file);
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
@@ -71,20 +63,5 @@ public class S3Controller {
   public ResponseEntity<String> getPresignedUrl(
       @RequestParam(name = "key", required = true) String keyName) {
     return ResponseEntity.ok(service.getPresignedUrl(keyName));
-  }
-
-  @ExceptionHandler(NoSuchElementException.class)
-  public ResponseEntity<String> handleNotFound(NoSuchElementException e) {
-    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-  }
-
-  @ExceptionHandler(IllegalArgumentException.class)
-  public ResponseEntity<String> handleBadRequest(IllegalArgumentException e) {
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-  }
-
-  @ExceptionHandler(RuntimeException.class)
-  public ResponseEntity<String> handleInternalError(RuntimeException e) {
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
   }
 }
