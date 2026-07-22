@@ -51,21 +51,15 @@ public class PermissionsConfig {
 
   public ApplicationUser getAuthenticatedUser() {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
     if (auth == null || !auth.isAuthenticated()) {
       return null;
     }
 
-    Object principal = null;
-    try {
-      principal = auth.getPrincipal();
-    } catch (Throwable e) {
-      e.printStackTrace();
+    if (auth.getPrincipal() instanceof ApplicationUser appUser) {
+      return appUser;
     }
 
-    if (principal instanceof User springUser) {
-      String email = springUser.getUsername();
-      return usersRepo.findByEmail(email).orElse(null);
-    }
     return null;
   }
 }

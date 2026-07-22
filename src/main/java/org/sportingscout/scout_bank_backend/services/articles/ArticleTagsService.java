@@ -1,6 +1,11 @@
 package org.sportingscout.scout_bank_backend.services.articles;
 
 import org.springframework.stereotype.Service;
+
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
+import jakarta.persistence.PersistenceContext;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataAccessException;
 
@@ -109,10 +114,13 @@ public class ArticleTagsService {
     }
   }
 
+  @Transactional
   public void editTag(Long id, String newName) {
     ArticleTag existingTag = tagsRepo.findById(id)
         .orElseThrow(() -> new NoSuchElementException("ArticleTag not found with id: " + id));
+    System.out.println("Existing tag: " + existingTag.toString());
     existingTag.setName(newName);
-    tagsRepo.save(existingTag);
+    System.out.println("New tag: " + existingTag.toString());
+
   }
 }

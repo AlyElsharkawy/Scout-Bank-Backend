@@ -1,16 +1,11 @@
 package org.sportingscout.scout_bank_backend.security;
 
-import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
 import org.sportingscout.scout_bank_backend.repositories.UsersRepository;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
-
-import java.util.stream.Collectors;
 
 @Service
 public class ApplicationUserDetails implements UserDetailsService {
@@ -21,17 +16,9 @@ public class ApplicationUserDetails implements UserDetailsService {
   }
 
   @Override
-  @Transactional
+  @Transactional(readOnly = true)
   public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-    ApplicationUser user = usersRepo.findByEmail(email)
+    return usersRepo.findByEmail(email)
         .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
-
-    return User.builder()
-        .username(user.getEmail())
-        .password(user.getPassword())
-        .authorities(user.getRole().getAuthorities().stream()
-            .map(SimpleGrantedAuthority::new)
-            .collect(Collectors.toList()))
-        .build();
   }
 }

@@ -2,6 +2,7 @@ package org.sportingscout.scout_bank_backend.controllers.articles;
 
 import org.sportingscout.scout_bank_backend.services.articles.ArticleTagsService;
 import org.sportingscout.scout_bank_backend.entities.ArticleTag;
+import org.sportingscout.scout_bank_backend.dtos.articles.CreateOrUpdateArticleTagRequest;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.HttpStatus;
@@ -9,15 +10,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import jakarta.validation.Valid;
 
@@ -44,8 +43,9 @@ public class ArticleTagsController {
 
   @PostMapping
   @PreAuthorize("@auth.has('tag:create')")
-  public ResponseEntity<Void> createTag(@Valid @RequestBody String name) {
-    service.createTag(name);
+  public ResponseEntity<Void> createTag(
+      @Valid @RequestBody CreateOrUpdateArticleTagRequest request) {
+    service.createTag(request.name());
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
@@ -56,10 +56,11 @@ public class ArticleTagsController {
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
-  @PutMapping("/{id}")
+  @PatchMapping("/{id}")
   @PreAuthorize("@auth.has('tag:edit')")
-  public ResponseEntity<Void> updateTag(Long id, String newName) {
-    service.editTag(id, newName);
+  public ResponseEntity<Void> updateTag(@PathVariable Long id,
+      @RequestBody @Valid CreateOrUpdateArticleTagRequest request) {
+    service.editTag(id, request.name());
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 }

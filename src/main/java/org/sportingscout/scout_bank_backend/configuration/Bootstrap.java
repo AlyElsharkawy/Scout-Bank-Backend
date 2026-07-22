@@ -4,20 +4,21 @@ import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
 import org.sportingscout.scout_bank_backend.entities.Organization;
 import org.sportingscout.scout_bank_backend.entities.UserRank;
 import org.sportingscout.scout_bank_backend.entities.UserRole;
+import org.sportingscout.scout_bank_backend.entities.ArticleTag;
 import org.sportingscout.scout_bank_backend.repositories.UsersRepository;
 import org.sportingscout.scout_bank_backend.repositories.OrganizationsRepository;
 import org.sportingscout.scout_bank_backend.repositories.UserRanksRepository;
 import org.sportingscout.scout_bank_backend.repositories.UserRolesRepository;
+import org.sportingscout.scout_bank_backend.repositories.articles.ArticleTagsRepository;
 import org.sportingscout.scout_bank_backend.security.Permissions;
-import org.sportingscout.scout_bank_backend.security.PermissionsConfig;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import org.springframework.validation.method.ParameterErrors;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Set;
+import java.util.List;
 import java.util.Optional;
 import java.util.Locale;
 import java.time.LocalDate;
@@ -30,6 +31,7 @@ public class Bootstrap implements CommandLineRunner {
   private final OrganizationsRepository organizationsRepo;
   private final UserRanksRepository userRanksRepo;
   private final UserRolesRepository userRolesRepo;
+  private final ArticleTagsRepository articleTagsRepo;
   private final PasswordEncoder passwordEncoder;
   private static final Faker egyptianFaker = new Faker(Locale.of("ar", "EG"));
   private static final Faker faker = new Faker();
@@ -49,17 +51,21 @@ public class Bootstrap implements CommandLineRunner {
   @Value("${bootstrap.roles:false}")
   private boolean createRoles;
 
+  @Value("${bootstrap.tags:false}")
+  private boolean createTags;
+
   @Value("${bootstrap.root-password}")
   private String tempPassword;
 
   public Bootstrap(UsersRepository usersRepo, OrganizationsRepository organizationsRepo,
       UserRanksRepository userRanksRepo, UserRolesRepository userRolesRepo,
-      PasswordEncoder passwordEncoder) {
+      PasswordEncoder passwordEncoder, ArticleTagsRepository articleTagsRepo) {
     this.usersRepo = usersRepo;
     this.organizationsRepo = organizationsRepo;
     this.passwordEncoder = passwordEncoder;
     this.userRanksRepo = userRanksRepo;
     this.userRolesRepo = userRolesRepo;
+    this.articleTagsRepo = articleTagsRepo;
 
     if (tempPassword == null) {
       tempPassword = egyptianFaker.internet().password(8, 8, true, false, true);
@@ -69,6 +75,7 @@ public class Bootstrap implements CommandLineRunner {
 
   @Override
   public void run(String... args) throws Exception {
+    ApplicationUser rootUser = null;
     if (createRanks) {
       UserRank smurfsRank = new UserRank("Smurfs",
           "Our youngest members who start their scouting journey through play, exploration, and basic outdoor skills.",
@@ -183,7 +190,7 @@ public class Bootstrap implements CommandLineRunner {
     UserRole finalViewerRole = tempViewerRole.isPresent() ? tempViewerRole.get() : null;
 
     if (createRoot) {
-      ApplicationUser rootUser = ApplicationUser.builder()
+      rootUser = ApplicationUser.builder()
           .name("Root User")
           .email("root@example.com")
           .phoneNumber("01245678910")
@@ -211,6 +218,20 @@ public class Bootstrap implements CommandLineRunner {
             .build();
         ApplicationUser newUser = usersRepo.save(tempUser);
         System.out.println("Created temp user with ID " + newUser.getId() + " and password " + tempPassword);
+      }
+    }
+
+    if (createTags) {
+      List<ArticleTag> tags = List.of(
+          new ArticleTag("EN"), new ArticleTag("AR"), new ArticleTag("Fire"),
+          new ArticleTag("Scout Law"), new ArticleTag("Knots"), new ArticleTag("Tents"),
+          new ArticleTag("Report"));
+      if (rootUser != null) {
+        for (ArticleTag tag : tags) {
+          tag.setCreatedBy(rootUser);
+          tag.setUpdatedBy(rootUser);
+          articleTagsRepo.save(tag);
+        }
       }
     }
   }

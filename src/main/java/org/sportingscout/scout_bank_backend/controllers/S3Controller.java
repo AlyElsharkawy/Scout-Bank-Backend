@@ -29,11 +29,20 @@ public class S3Controller {
 
   @PreAuthorize("@auth.has('media:upload')")
   @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ResponseEntity<String> uploadFile(
+  public ResponseEntity<String> uploadArticleMedia(
       @RequestParam("file") MultipartFile file,
       @RequestParam("fileName") String fileName) {
 
     String keyName = service.uploadArticleFile(fileName, file);
+    return ResponseEntity.ok(keyName);
+  }
+
+  @PostMapping(value = "/upload/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<String> uploadUserProfile(
+      @RequestParam("file") MultipartFile file,
+      @RequestParam("fileName") String fileName) {
+
+    String keyName = service.uploadProfilePicture(fileName, file);
     return ResponseEntity.ok(keyName);
   }
 

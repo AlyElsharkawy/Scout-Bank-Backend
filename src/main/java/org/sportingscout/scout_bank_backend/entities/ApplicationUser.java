@@ -61,11 +61,11 @@ public class ApplicationUser implements UserDetails {
   @JoinColumn(name = "organization_id")
   private Organization organization;
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumn(name = "user_rank_id")
   private UserRank rank;
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumn(name = "user_role_id")
   private UserRole role;
 
