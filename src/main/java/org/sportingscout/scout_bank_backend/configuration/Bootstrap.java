@@ -5,11 +5,13 @@ import org.sportingscout.scout_bank_backend.entities.Organization;
 import org.sportingscout.scout_bank_backend.entities.UserRank;
 import org.sportingscout.scout_bank_backend.entities.UserRole;
 import org.sportingscout.scout_bank_backend.entities.ArticleTag;
+import org.sportingscout.scout_bank_backend.entities.ArticleType;
 import org.sportingscout.scout_bank_backend.repositories.UsersRepository;
 import org.sportingscout.scout_bank_backend.repositories.OrganizationsRepository;
 import org.sportingscout.scout_bank_backend.repositories.UserRanksRepository;
 import org.sportingscout.scout_bank_backend.repositories.UserRolesRepository;
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleTagsRepository;
+import org.sportingscout.scout_bank_backend.repositories.articles.ArticleTypeRepository;
 import org.sportingscout.scout_bank_backend.security.Permissions;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -32,6 +34,7 @@ public class Bootstrap implements CommandLineRunner {
   private final UserRanksRepository userRanksRepo;
   private final UserRolesRepository userRolesRepo;
   private final ArticleTagsRepository articleTagsRepo;
+  private final ArticleTypeRepository articleTypeRepo;
   private final PasswordEncoder passwordEncoder;
   private static final Faker egyptianFaker = new Faker(Locale.of("ar", "EG"));
   private static final Faker faker = new Faker();
@@ -54,18 +57,23 @@ public class Bootstrap implements CommandLineRunner {
   @Value("${bootstrap.tags:false}")
   private boolean createTags;
 
+  @Value("${bootstrap.types:false}")
+  private boolean createTypes;
+
   @Value("${bootstrap.root-password}")
   private String tempPassword;
 
   public Bootstrap(UsersRepository usersRepo, OrganizationsRepository organizationsRepo,
       UserRanksRepository userRanksRepo, UserRolesRepository userRolesRepo,
-      PasswordEncoder passwordEncoder, ArticleTagsRepository articleTagsRepo) {
+      PasswordEncoder passwordEncoder, ArticleTagsRepository articleTagsRepo,
+      ArticleTypeRepository articleTypeRepo) {
     this.usersRepo = usersRepo;
     this.organizationsRepo = organizationsRepo;
     this.passwordEncoder = passwordEncoder;
     this.userRanksRepo = userRanksRepo;
     this.userRolesRepo = userRolesRepo;
     this.articleTagsRepo = articleTagsRepo;
+    this.articleTypeRepo = articleTypeRepo;
 
     if (tempPassword == null) {
       tempPassword = egyptianFaker.internet().password(8, 8, true, false, true);
@@ -231,6 +239,24 @@ public class Bootstrap implements CommandLineRunner {
           tag.setCreatedBy(rootUser);
           tag.setUpdatedBy(rootUser);
           articleTagsRepo.save(tag);
+        }
+      }
+    }
+
+    if (createTypes) {
+      List<ArticleType> types = List.of(
+          new ArticleType("Tutorial",
+              "Tutorial articles are designed to teach the reader how to achieve a certain goal or perform a certain action in a step by step process"),
+          new ArticleType("Documentation",
+              "Documentation articles are designed to act as an absolute source of knowledge for a certain topic. It does not have to teach it in a step-by-step manner, however"),
+          new ArticleType("Report",
+              "Reports usually contain detailed descriptions about a particular event or statistical analysis"));
+
+      if (rootUser != null) {
+        for (ArticleType type : types) {
+          type.setCreatedBy(rootUser);
+          type.setUpdatedBy(rootUser);
+          articleTypeRepo.save(type);
         }
       }
     }

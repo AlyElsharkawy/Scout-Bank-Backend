@@ -10,13 +10,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import jakarta.validation.Valid;
 
@@ -34,16 +33,22 @@ public class ArticleTypesController {
     return ResponseEntity.ok(service.getAllArticleTypes());
   }
 
+  @GetMapping("/{id}")
+  public ResponseEntity<ArticleType> getArticleType(@PathVariable Long id) {
+    return ResponseEntity.ok(service.getArticleType(id));
+  }
+
   @PostMapping
   @PreAuthorize("@auth.has('type:create')")
-  public ResponseEntity<Void> createArticleType(@Valid CreateArticleTypeRequest request) {
+  public ResponseEntity<Void> createArticleType(@Valid @RequestBody CreateArticleTypeRequest request) {
     service.createArticleType(request);
     return ResponseEntity.status(HttpStatus.CREATED).build();
   }
 
-  @PutMapping("/{id}")
-  @PreAuthorize("@auth.has('type:edit')")
-  public ResponseEntity<Void> editArticleType(@PathVariable Long id, @Valid CreateArticleTypeRequest request) {
+  @PatchMapping("/{id}")
+  // @PreAuthorize("@auth.has('type:edit')")
+  public ResponseEntity<Void> editArticleType(@PathVariable Long id,
+      @Valid @RequestBody CreateArticleTypeRequest request) {
     service.editArticleType(id, request);
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }

@@ -6,13 +6,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleTypeRepository;
 import org.sportingscout.scout_bank_backend.dtos.articles.CreateArticleTypeRequest;
-import org.sportingscout.scout_bank_backend.entities.Article;
 import org.sportingscout.scout_bank_backend.entities.ArticleType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.NoSuchElementException;
 
 @Service
 public class ArticleTypesService {
@@ -42,7 +43,10 @@ public class ArticleTypesService {
 
   public void editArticleType(Long id, CreateArticleTypeRequest request) {
     try {
-      ArticleType temp = new ArticleType(request.name(), request.description());
+      Optional<ArticleType> existing = this.articleTypeRepo.findById(id);
+      ArticleType temp = existing.get();
+      temp.setName(request.name());
+      temp.setDescription(request.description());
       this.articleTypeRepo.save(temp);
     } catch (DataIntegrityViolationException e) {
       logger.warn("Attempted to edit ArticleType with duplicate unique name or null description: ", e.getMessage());
@@ -61,6 +65,21 @@ public class ArticleTypesService {
     try {
       logger.debug("Attempting to fetch all ArticleTag instances");
       List<ArticleType> temp = this.articleTypeRepo.findAll();
+      return temp;
+    } catch (DataAccessException e) {
+      logger.error("Database error while fetching all ArticleType instances: ", e);
+      throw e;
+    } catch (Exception e) {
+      logger.error("Unexpected error during all ArticleType fetch: ", e);
+      throw e;
+    }
+  }
+
+  public ArticleType getArticleType(Long id) {
+    try {
+      logger.debug("Attempting to fetch ArticleTag instance");
+      ArticleType temp = this.articleTypeRepo.findById(id)
+          .orElseThrow(() -> new NoSuchElementException("No element with id " + id + " exists"));
       return temp;
     } catch (DataAccessException e) {
       logger.error("Database error while fetching all ArticleType instances: ", e);

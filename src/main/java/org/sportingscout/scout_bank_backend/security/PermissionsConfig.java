@@ -27,26 +27,12 @@ public class PermissionsConfig {
   }
 
   public boolean hasId(Long id) {
-    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-    if (auth == null || !auth.isAuthenticated()) {
+    ApplicationUser user = getAuthenticatedUser();
+    if (user == null || user.getId() == null) {
       return false;
     }
 
-    Object principal = null;
-    try {
-      principal = auth.getPrincipal();
-    } catch (Throwable e) {
-      e.printStackTrace();
-    }
-
-    if (principal instanceof User springUser) {
-      String email = springUser.getUsername();
-
-      return usersRepo.findByEmail(email)
-          .map(dbUser -> dbUser.getId().equals(id))
-          .orElse(false);
-    }
-    return false;
+    return user.getId().equals(id);
   }
 
   public ApplicationUser getAuthenticatedUser() {

@@ -9,7 +9,7 @@ public record CreateArticleVersionRequest(
     List<Long> editorIds,
     int majorVersion,
     int minorVersion,
-    List<Long> tagIds,
-    List<String> imageKeys,
-    List<String> videoKeys) {
+    List<Long> tagIds
+// List<String> imageKeys,
+/* List<String> videoKeys */) {
 }
