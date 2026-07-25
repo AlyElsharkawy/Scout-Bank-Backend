@@ -28,6 +28,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.Set;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import com.github.f4b6a3.uuid.UuidCreator;
@@ -63,6 +64,30 @@ public class ArticleVersionsService {
     return users;
   }
 
+  private void doUserAuthorOrEditorCheck(ApplicationUser user, UUID externalId,
+      Integer majorVersion, Integer minorVersion) {
+    Optional<ArticleVersion> subversion = this.articleVersionRepo.findByExternalIdAndMajorVersionAndMinorVersion(
+        externalId,
+        majorVersion, minorVersion);
+    if (subversion.isPresent()) {
+      Set<Long> editorIds = subversion.get().getEditors().stream()
+          .map(ApplicationUser::getId)
+          .collect(Collectors.toSet());
+
+      Long authorId = subversion.get().getAuthor().getId();
+
+      if (user.getId() != authorId && !editorIds.contains(user.getId())) {
+        throw new AccessDeniedException(String.format(
+            "Application User with external id {} is not allowed to access ArticleVersion subverion with external id {} because the user is not the author or an editor",
+            user.getExternalId(), externalId));
+      }
+    } else {
+      throw new NoSuchElementException(String.format(
+          "ArticleVersion subversion with external id {}, majorVersion {}, and minorVersion {} does not exist",
+          externalId.toString(), majorVersion, minorVersion));
+    }
+  }
+
   public UUID createArticleVersion(CreateArticleVersionRequest request) {
     try {
       Set<ArticleTag> tags = request.tagIds().stream()
@@ -77,7 +102,10 @@ public class ArticleVersionsService {
           .content(request.content())
           .title(request.title())
           .majorVersion(0)
-          .minorVersion(0)
+          .minorVersion(1)
+          .previousMinorVersion(0)
+          .previousMajorVersion(0)
+          .reviewer(null)
           .tags(tags)
           .editors(editors)
           .externalId(externalId)
@@ -145,6 +173,8 @@ public class ArticleVersionsService {
 
   public Optional<ArticleVersion> getArticleVersionSubversion(UUID externalId, Integer majorVersion,
       Integer minorVersion) {
+    ApplicationUser user = this.permissionsConfig.getAuthenticatedUser();
+    doUserAuthorOrEditorCheck(user, externalId, majorVersion, minorVersion);
     try {
       logger.debug("Attempting to fetch ArticleVersion subversion with externalId {}, majorNumber {}, minorNumber {}",
           externalId, majorVersion, minorVersion);

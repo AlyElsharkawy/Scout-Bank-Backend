@@ -4,8 +4,12 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import org.hibernate.annotations.NaturalId;
+import org.hibernate.annotations.NaturalIdCache;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
@@ -28,15 +32,24 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.stream.Collectors;
+import java.util.UUID;
+
+import com.github.f4b6a3.uuid.UuidCreator;
 
 @Getter
 @Setter
 @Entity
 @NoArgsConstructor
+@NaturalIdCache
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class ApplicationUser implements UserDetails {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+
+  @NaturalId
+  @Column(unique = true, updatable = false, nullable = false)
+  private UUID externalId;
 
   @Column(nullable = false)
   @NotBlank(message = "Name cannot be empty or completely whitespace")
@@ -83,6 +96,7 @@ public class ApplicationUser implements UserDetails {
     Instant currentInstant = Instant.now();
     this.createdAt = currentInstant;
     this.updatedAt = currentInstant;
+    this.externalId = UuidCreator.getTimeBased();
   }
 
   @PreUpdate

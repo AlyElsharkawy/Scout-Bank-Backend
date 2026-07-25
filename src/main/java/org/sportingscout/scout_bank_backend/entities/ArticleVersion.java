@@ -1,8 +1,5 @@
 package org.sportingscout.scout_bank_backend.entities;
 
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.boot.security.autoconfigure.SecurityProperties.User;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -22,7 +19,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import jakarta.persistence.Cacheable;
 import jakarta.validation.constraints.NotBlank;
 
 import org.hibernate.annotations.OnDelete;
@@ -70,6 +66,7 @@ record UserSummary(
 public class ArticleVersion {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @JsonIgnore
   private Long id;
 
   @NaturalId
@@ -94,8 +91,10 @@ public class ArticleVersion {
   @JsonIgnore
   private Set<ApplicationUser> editors = new HashSet<>();
 
+  @Column(length = 1023, nullable = false, updatable = false)
+  private String updateNote;
+
   @ManyToOne(fetch = FetchType.LAZY)
-  @LastModifiedBy
   @JsonIgnore
   private ApplicationUser reviewer;
 
@@ -116,12 +115,14 @@ public class ArticleVersion {
   private int minorVersion;
 
   @Column(nullable = false, updatable = false)
+  private int previousMajorVersion;
+
+  @Column(nullable = false, updatable = false)
+  private int previousMinorVersion;
+
+  @Column(nullable = false, updatable = false)
   @CreatedDate
   private Instant createdAt;
-
-  @Column(nullable = false)
-  @LastModifiedDate
-  private Instant updatedAt;
 
   @ManyToMany
   @JoinTable(name = "article_version_tags", joinColumns = @JoinColumn(name = "article_version_id"), inverseJoinColumns = @JoinColumn(name = "article_tag_id"))
@@ -196,9 +197,12 @@ public class ArticleVersion {
   public ArticleVersion(ApplicationUser author, ArticleType type, Set<ApplicationUser> editors,
       String title, String content,
       int majorVersion, int minorVersion,
+      int previousMajorVersion, int previousMinorVersion,
       Set<ArticleTag> tags,
-      UUID externalId) {
+      UUID externalId,
+      ApplicationUser reviewer) {
     this.author = author;
+    this.reviewer = reviewer;
     this.type = type;
     this.editors = editors;
     this.status = ApprovalStatus.DRAFT;
@@ -206,6 +210,8 @@ public class ArticleVersion {
     this.content = content;
     this.minorVersion = minorVersion;
     this.majorVersion = majorVersion;
+    this.previousMinorVersion = previousMinorVersion;
+    this.previousMajorVersion = previousMajorVersion;
     this.tags = tags;
     this.externalId = externalId;
   }

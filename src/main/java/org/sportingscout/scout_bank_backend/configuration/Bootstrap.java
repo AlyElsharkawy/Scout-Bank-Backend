@@ -250,7 +250,9 @@ public class Bootstrap implements CommandLineRunner {
           new ArticleType("Documentation",
               "Documentation articles are designed to act as an absolute source of knowledge for a certain topic. It does not have to teach it in a step-by-step manner, however"),
           new ArticleType("Report",
-              "Reports usually contain detailed descriptions about a particular event or statistical analysis"));
+              "Reports usually contain detailed descriptions about a particular event or statistical analysis"),
+          new ArticleType("Speech",
+              "Speeches contain text intended to invoke an emotional response from its audience"));
 
       if (rootUser != null) {
         for (ArticleType type : types) {

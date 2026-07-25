@@ -133,4 +133,8 @@ public class ArticleVersionController {
       @Valid EditorRequest request) {
     return ResponseEntity.ok().build();
   }
+
+  // This is called when you wawnt to add images to the article version
+  // subversion
+  // By default, it targets the latest article version subversion
 }
