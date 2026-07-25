@@ -20,10 +20,17 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Cacheable;
 import jakarta.validation.constraints.NotBlank;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.NaturalId;
+import org.hibernate.annotations.NaturalIdCache;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -50,16 +57,23 @@ record UserSummary(
 }
 
 @Entity
+@Table(name = "article_version", uniqueConstraints = {
+    @UniqueConstraint(name = "unique_article_version_subversion", columnNames = { "id", "major_version",
+        "minor_version" })
+})
+@EntityListeners(AuditingEntityListener.class)
+@NaturalIdCache
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@EntityListeners(AuditingEntityListener.class)
 public class ArticleVersion {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(updatable = false, nullable = false, unique = true)
+  @NaturalId
+  @Column(updatable = false, nullable = false)
   private UUID externalId;
 
   @ManyToOne(fetch = FetchType.LAZY)

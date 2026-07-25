@@ -1,15 +1,15 @@
 package org.sportingscout.scout_bank_backend.dtos.articles;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import java.util.List;
+import java.util.UUID;
 
 public record CreateArticleVersionRequest(
-    String title,
-    String content,
+    @NotBlank(message = "Title cannot be blank") String title,
     Long articleTypeId,
-    List<Long> editorIds,
-    int majorVersion,
-    int minorVersion,
-    List<Long> tagIds
-// List<String> imageKeys,
-/* List<String> videoKeys */) {
+    @NotBlank(message = "Article Version cannot be empty") @Size(max = 65535, message = "Cannot contain more than 65,535 characters") String content,
+    List<UUID> editorIds,
+    @NotBlank(message = "Article Version must contain tags") List<Long> tagIds) {
 }
