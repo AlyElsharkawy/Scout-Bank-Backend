@@ -9,7 +9,7 @@ import java.util.List;
 public record CreateArticleVersionRequest(
     @NotBlank(message = "Title cannot be blank") String title,
     Long articleTypeId,
-    @NotBlank(message = "Article Version cannot be empty") @Size(max = 65535, message = "Cannot contain more than 65,535 characters") String content,
+    @NotBlank(message = "Article Version content cannot be empty") @Size(max = 65535, message = "Cannot contain more than 65,535 characters") String content,
     @NotEmpty(message = "Article Version must contain tags") List<Long> tagIds,
     @NotBlank(message = "Update note is required") String updateNote) {
 }

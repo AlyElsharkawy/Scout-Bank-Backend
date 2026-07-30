@@ -99,7 +99,12 @@ public class ArticleVersionController {
   public ResponseEntity<Void> updateArticleVersion(
       @PathVariable String externalId,
       @RequestParam(name = "majorVersion") Integer majorVersion,
-      @RequestParam(name = "minorVersion") Integer minorVersion) {
+      @RequestParam(name = "minorVersion") Integer minorVersion,
+      @RequestParam(name = "incrementMinor", defaultValue = "true") Boolean incrementMinor,
+      @RequestBody CreateArticleVersionRequest request) {
+    this.service.updateArticleVersionSubversion(UUID.fromString(externalId),
+        majorVersion, minorVersion, request, incrementMinor);
+
     return ResponseEntity.ok().build();
   }
 

@@ -102,11 +102,11 @@ public class ArticleVersionsService {
    * }
    */
 
-  private NextVersionPair getNextVersion(boolean incrementMajor, UUID externalId) {
+  private NextVersionPair getNextVersion(boolean incrementMinor, UUID externalId) {
     String errorMessage = String.format("ArticleVersion subversion with externalId %s does not exist", externalId);
     Integer nextMajorNumber = this.articleVersionRepo.findMaxMajorVersionByExternalId(externalId)
         .orElseThrow(() -> new NoSuchElementException(errorMessage));
-    if (incrementMajor) {
+    if (!incrementMinor) {
       Integer nextMinorNumber = 0;
       return new NextVersionPair(nextMajorNumber + 1, nextMinorNumber);
     } else {
@@ -181,6 +181,40 @@ public class ArticleVersionsService {
       logger.error("Unexpected error during ArticleVersion creation: ", e);
       throw e;
     }
+  }
+
+  // TODO: Add Exception handling later
+  public void updateArticleVersionSubversion(UUID externalId,
+      Integer majorVersion, Integer minorVersion,
+      CreateArticleVersionRequest request,
+      boolean incrementMinor) {
+    ArticleVersion previous = this.articleVersionRepo.findByExternalIdAndMajorVersionAndMinorVersion(externalId,
+        majorVersion, minorVersion)
+        .orElseThrow(() -> new NoSuchElementException(String.format(
+            "ArticleVersion subversion with externalId %s, majorVersion %d, and minorVersion %d does not exist",
+            externalId.toString(), majorVersion, minorVersion)));
+
+    Set<ArticleTag> tags = request.tagIds().stream()
+        .map(articleTagsRepo::getReferenceById)
+        .collect(Collectors.toSet());
+
+    NextVersionPair nextVersionPair = getNextVersion(incrementMinor, externalId);
+    ArticleType articleType = articleTypeRepo.getReferenceById(request.articleTypeId());
+    ArticleVersion newArticleVersion = ArticleVersion.builder()
+        .externalId(previous.getExternalId())
+        .content(request.content())
+        .title(request.title())
+        .majorVersion(nextVersionPair.majorVersion())
+        .minorVersion(nextVersionPair.minorVersion())
+        .previousMinorVersion(previous.getMinorVersion())
+        .previousMajorVersion(previous.getMajorVersion())
+        .reviewer(null)
+        .tags(tags)
+        .updateNote(request.updateNote())
+        .type(articleType)
+        .build();
+
+    articleVersionRepo.save(newArticleVersion);
   }
 
   private void doAdminSupervisorRoleCheck() {
@@ -348,7 +382,7 @@ public class ArticleVersionsService {
         .updateNote(updateNote)
         .build();
 
-    NextVersionPair nextVersionPair = getNextVersion(!incrementMinor, externalId);
+    NextVersionPair nextVersionPair = getNextVersion(incrementMinor, externalId);
     newSubversion.setMajorVersion(nextVersionPair.majorVersion());
     newSubversion.setMinorVersion(nextVersionPair.minorVersion());
 
