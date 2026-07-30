@@ -232,6 +232,7 @@ public class Bootstrap implements CommandLineRunner {
     if (createTags) {
       List<ArticleTag> tags = List.of(
           new ArticleTag("EN"), new ArticleTag("AR"), new ArticleTag("Fire"),
+          new ArticleTag("History"),
           new ArticleTag("Scout Law"), new ArticleTag("Knots"), new ArticleTag("Tents"),
           new ArticleTag("Report"));
       if (rootUser != null) {

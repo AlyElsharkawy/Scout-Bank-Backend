@@ -4,6 +4,7 @@ import org.sportingscout.scout_bank_backend.entities.ArticleVersion;
 import org.sportingscout.scout_bank_backend.entities.ArticleVersionEditorModifyOptions;
 import org.sportingscout.scout_bank_backend.services.articles.ArticleVersionsService;
 import org.sportingscout.scout_bank_backend.dtos.articles.CreateArticleVersionRequest;
+import org.sportingscout.scout_bank_backend.dtos.OperationResult;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,11 +16,13 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -27,6 +30,11 @@ import java.util.UUID;
 
 record EditorRequest(
     @NotEmpty(message = "Editor list cannot be empty") List<@NotBlank(message = "UUID cannot be blank") @Pattern(regexp = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", message = "Every editor ID must be a valid UUID string") String> editorIds) {
+}
+
+record TagRequest(
+    List<@Positive(message = "Tag IDs must be positive") Long> tagIds,
+    @NotBlank(message = "Update Note cannot be blank") String updateNote) {
 }
 
 @RestController
@@ -69,7 +77,10 @@ public class ArticleVersionController {
         majorVersion,
         minorVersion)
         .map(articleVersion -> ResponseEntity.ok(articleVersion))
-        .orElseThrow(() -> new NoSuchElementException("Article Version with id " + externalId + " does not exist"));
+        .orElseThrow(
+            () -> new NoSuchElementException(String.format(
+                "ArticleVersion subversion with externalId %s, majorVersion %d, and minorVersion %d does not exist",
+                externalId, majorVersion, minorVersion)));
   }
 
   // This is called when we create a new article version from scratch
@@ -86,27 +97,27 @@ public class ArticleVersionController {
   @PatchMapping("/{externalId}")
   @PreAuthorize("@auth.has('article:edit')")
   public ResponseEntity<Void> updateArticleVersion(
-      @PathVariable String externalId) {
+      @PathVariable String externalId,
+      @RequestParam(name = "majorVersion") Integer majorVersion,
+      @RequestParam(name = "minorVersion") Integer minorVersion) {
     return ResponseEntity.ok().build();
   }
 
   // This is called when we want to add more tags to an already existing
   // article version subversion
   // DOES CREATE a new article version subversion
-  @PatchMapping("/{externalId}/tags/add")
+  @PatchMapping("/{externalId}/tags/modify")
   @PreAuthorize("@auth.has('article:edit')")
   public ResponseEntity<Void> addArticleVersionTags(
-      @PathVariable String externalId) {
-    return ResponseEntity.ok().build();
-  }
-
-  // This is called when we want to add more tags to an already existing
-  // article version subversion
-  // DOES CREATE a new article version subversion
-  @PatchMapping("/{externalId}/tags/remove")
-  @PreAuthorize("@auth.has('article:edit')")
-  public ResponseEntity<Void> removeArticleVersionTags(
-      @PathVariable String externalId) {
+      @PathVariable String externalId,
+      @RequestParam(name = "majorVersion") Integer majorVersion,
+      @RequestParam(name = "minorVersion") Integer minorVersion,
+      @RequestParam(name = "incrementMinor", defaultValue = "true") Boolean incrementMinor,
+      @RequestParam(name = "addTags") Boolean addTags,
+      @Valid @RequestBody TagRequest request) {
+    this.service.modifyArticleVersionTags(incrementMinor, addTags,
+        UUID.fromString(externalId), majorVersion, minorVersion,
+        request.tagIds(), request.updateNote());
     return ResponseEntity.ok().build();
   }
 
@@ -114,27 +125,55 @@ public class ArticleVersionController {
   // subversion
   // By default, it targets the latest article version subversion
   // DOES NOT CREATE a new article subversion
-  @PatchMapping("/{externalId}/editors/add")
+  @PatchMapping("/{externalId}/editors/modify")
   @PreAuthorize("@auth.has('article:edit')")
-  public ResponseEntity<Void> addArticleVersionEditors(
+  public ResponseEntity<OperationResult<Void>> addArticleVersionEditors(
       @PathVariable String externalId,
-      @Valid EditorRequest request) {
-    return ResponseEntity.ok().build();
+      @Valid @RequestBody EditorRequest request,
+      @RequestParam(name = "majorVersion") Integer majorVersion,
+      @RequestParam(name = "minorVersion") Integer minorVersion,
+      @RequestParam(name = "addEditors") Boolean addEditors) {
+    ArticleVersionEditorModifyOptions option = addEditors ? ArticleVersionEditorModifyOptions.ADD
+        : ArticleVersionEditorModifyOptions.DELETE;
+    this.service.modifyArticleVersionEditors(option,
+        UUID.fromString(externalId), majorVersion, minorVersion,
+        request.editorIds());
+
+    OperationResult<Void> result = this.service.modifyArticleVersionEditors(option,
+        UUID.fromString(externalId), majorVersion, minorVersion,
+        request.editorIds());
+
+    if (result.hasWarnings()) {
+      return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(result);
+    }
+
+    return ResponseEntity.ok(result);
   }
 
   // This is called when you want to remove editor(s) to the article version
   // subversion
   // By default, it targets the latest article version subversion
   // DOES NOT CREATE a new article subversion
-  @PatchMapping("/{externalId}/editors/remove")
+  @PatchMapping("/{externalId}/editors/modify/all")
   @PreAuthorize("@auth.has('article:edit')")
-  public ResponseEntity<Void> removeArticleVersionEditors(
+  public ResponseEntity<OperationResult<Void>> removeArticleVersionEditors(
       @PathVariable String externalId,
-      @Valid EditorRequest request) {
-    return ResponseEntity.ok().build();
-  }
+      @Valid @RequestBody EditorRequest request,
+      @RequestParam(name = "addEditors") Boolean addEditors) {
+    ArticleVersionEditorModifyOptions option = addEditors ? ArticleVersionEditorModifyOptions.ADD_RECURSIVELY
+        : ArticleVersionEditorModifyOptions.DELETE_RECURSIVELY;
+    this.service.modifyArticleVersionEditors(option,
+        UUID.fromString(externalId), null, null,
+        request.editorIds());
 
-  // This is called when you wawnt to add images to the article version
-  // subversion
-  // By default, it targets the latest article version subversion
+    OperationResult<Void> result = this.service.modifyArticleVersionEditors(option,
+        UUID.fromString(externalId), null, null,
+        request.editorIds());
+
+    if (result.hasWarnings()) {
+      return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(result);
+    }
+
+    return ResponseEntity.ok(result);
+  }
 }

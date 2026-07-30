@@ -23,15 +23,16 @@ import jakarta.validation.constraints.NotBlank;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.annotations.NaturalId;
-import org.hibernate.annotations.NaturalIdCache;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
+//import org.hibernate.annotations.NaturalId;
+//import org.hibernate.annotations.NaturalIdCache;
+//import org.hibernate.annotations.Cache;
+//import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.NoArgsConstructor;
@@ -54,12 +55,12 @@ record UserSummary(
 
 @Entity
 @Table(name = "article_version", uniqueConstraints = {
-    @UniqueConstraint(name = "unique_article_version_subversion", columnNames = { "id", "major_version",
+    @UniqueConstraint(name = "unique_article_version_subversion", columnNames = { "external_id", "major_version",
         "minor_version" })
 })
 @EntityListeners(AuditingEntityListener.class)
-@NaturalIdCache
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+// @NaturalIdCache
+// @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
@@ -69,7 +70,7 @@ public class ArticleVersion {
   @JsonIgnore
   private Long id;
 
-  @NaturalId
+  // @NaturalId
   @Column(updatable = false, nullable = false)
   private UUID externalId;
 
@@ -87,12 +88,14 @@ public class ArticleVersion {
   // Many to Many
   @ManyToMany
   @JoinTable(name = "article_version_editors", joinColumns = @JoinColumn(name = "article_version_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
-  @Singular
   @JsonIgnore
   private Set<ApplicationUser> editors = new HashSet<>();
 
   @Column(length = 1023, nullable = false, updatable = false)
   private String updateNote;
+
+  @Column(length = 1023)
+  private String reviewNote;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JsonIgnore
@@ -109,15 +112,19 @@ public class ArticleVersion {
   private String content;
 
   @Column(nullable = false, updatable = false)
+  @Setter
   private int majorVersion;
 
   @Column(nullable = false, updatable = false)
+  @Setter
   private int minorVersion;
 
   @Column(nullable = false, updatable = false)
+  @Setter
   private int previousMajorVersion;
 
   @Column(nullable = false, updatable = false)
+  @Setter
   private int previousMinorVersion;
 
   @Column(nullable = false, updatable = false)
@@ -129,6 +136,7 @@ public class ArticleVersion {
   @OnDelete(action = OnDeleteAction.CASCADE)
   @Singular
   @JsonIgnore
+  @Setter
   private Set<ArticleTag> tags = new HashSet<>();
 
   @JsonProperty("author")
@@ -184,9 +192,10 @@ public class ArticleVersion {
     return this.type.getName();
   }
 
-  public void setStatus(ApprovalStatus status, ApplicationUser reviewer) {
+  public void setStatus(ApprovalStatus status, String reviewNote, ApplicationUser reviewer) {
     this.reviewer = reviewer;
     this.status = status;
+    this.reviewNote = reviewNote;
   }
 
   public String getSemanticVersion() {
@@ -200,7 +209,8 @@ public class ArticleVersion {
       int previousMajorVersion, int previousMinorVersion,
       Set<ArticleTag> tags,
       UUID externalId,
-      ApplicationUser reviewer) {
+      ApplicationUser reviewer,
+      String updateNote) {
     this.author = author;
     this.reviewer = reviewer;
     this.type = type;
@@ -214,5 +224,6 @@ public class ArticleVersion {
     this.previousMajorVersion = previousMajorVersion;
     this.tags = tags;
     this.externalId = externalId;
+    this.updateNote = updateNote;
   }
 }
