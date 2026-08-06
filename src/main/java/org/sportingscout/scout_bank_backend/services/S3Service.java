@@ -2,6 +2,8 @@ package org.sportingscout.scout_bank_backend.services;
 
 import org.sportingscout.scout_bank_backend.security.PermissionsConfig;
 import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
+import org.sportingscout.scout_bank_backend.entities.Organization;
+import org.sportingscout.scout_bank_backend.repositories.OrganizationsRepository;
 import org.sportingscout.scout_bank_backend.repositories.UsersRepository;
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleVersionMediaRepository;
 import org.sportingscout.scout_bank_backend.entities.ArticleVersionMedia;
@@ -33,10 +35,13 @@ import java.io.IOException;
 import java.time.Duration;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.NoSuchElementException;
 
 import jakarta.transaction.Transactional;
 
@@ -48,18 +53,20 @@ public class S3Service {
   private final PermissionsConfig permissionsConfig;
   private final ArticleVersionMediaRepository articleVersionMediaRepository;
   private final UsersRepository usersRepository;
+  private final OrganizationsRepository organizationsRepository;
   private static final Logger logger = LoggerFactory.getLogger(S3Service.class);
 
   public S3Service(S3Client client, @Value("${s3.bucket-name}") String bucketName,
       S3Presigner presigner, PermissionsConfig permissionsConfig,
       ArticleVersionMediaRepository articleVersionMediaRepository,
-      UsersRepository usersRepository) {
+      UsersRepository usersRepository, OrganizationsRepository organizationsRepository) {
     this.client = client;
     this.bucketName = bucketName;
     this.presigner = presigner;
     this.permissionsConfig = permissionsConfig;
     this.articleVersionMediaRepository = articleVersionMediaRepository;
     this.usersRepository = usersRepository;
+    this.organizationsRepository = organizationsRepository;
   }
 
   @Transactional
@@ -77,10 +84,14 @@ public class S3Service {
     S3FileUtilities.validateFileName(fileName, S3FileUtilities.ALLOWED_MEDIA_EXTENSIONS);
     try {
       ApplicationUser user = permissionsConfig.getAuthenticatedUser();
+      Organization userOrganization = organizationsRepository.findById(user.getOrganization().getId())
+          .orElseThrow(() -> new NoSuchElementException(
+              String.format("Organization with ID %d does not exist", user.getOrganization().getId())));
+
       InputStream inputStream = multiPartFile.getInputStream();
       Long contentLength = multiPartFile.getSize();
       String keyName = S3FileUtilities.getArticleKeyName(
-          user.getOrganization().getInternalName(), fileName);
+          userOrganization.getInternalName(), fileName);
       PutObjectRequest request = PutObjectRequest.builder()
           .bucket(this.bucketName)
           .contentType(multiPartFile.getContentType())
@@ -188,7 +199,21 @@ public class S3Service {
     }
   }
 
-  public List<String> listFiles(String prefix) {
+  public List<Map<String, String>> listFiles(String searchTerm) {
+    List<ArticleVersionMedia> mediaList = this.articleVersionMediaRepository
+        .findByFileNameContainingIgnoreCase(searchTerm);
+
+    List<Map<String, String>> response = mediaList.stream()
+        .map(media -> Map.of(
+            "fileName", media.getFileName(),
+            "mimeType", media.getMimeType(),
+            "key", media.getKey()))
+        .toList();
+    return response;
+  }
+
+  // TODO: Make it return the human readable filename aswell
+  public List<String> listFilesInPrefix(String prefix) {
     try {
       ListObjectsV2Request req = ListObjectsV2Request.builder()
           .bucket(this.bucketName)

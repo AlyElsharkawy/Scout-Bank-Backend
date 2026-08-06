@@ -2,16 +2,21 @@ package org.sportingscout.scout_bank_backend.services.articles;
 
 import org.sportingscout.scout_bank_backend.dtos.OperationResult;
 import org.sportingscout.scout_bank_backend.security.PermissionsConfig;
+import org.sportingscout.scout_bank_backend.services.S3Service;
 import org.sportingscout.scout_bank_backend.entities.ArticleVersion;
 import org.sportingscout.scout_bank_backend.entities.ArticleVersionEditorModifyOptions;
+import org.sportingscout.scout_bank_backend.entities.ArticleVersionMedia;
+import org.sportingscout.scout_bank_backend.entities.ArticleVersionMediaAssignment;
 import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
 import org.sportingscout.scout_bank_backend.entities.ArticleTag;
 import org.sportingscout.scout_bank_backend.entities.ArticleType;
 import org.sportingscout.scout_bank_backend.dtos.articles.CreateArticleVersionRequest;
+import org.sportingscout.scout_bank_backend.dtos.articles.ArticleVersionWithMedia;
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleVersionRepository;
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleTagsRepository;
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleTypeRepository;
-
+import org.sportingscout.scout_bank_backend.repositories.articles.ArticleVersionMediaAssignmentRepository;
+import org.sportingscout.scout_bank_backend.repositories.articles.ArticleVersionMediaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -21,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.EntityManager;
 
+import org.aspectj.weaver.TemporaryTypeMunger;
 import org.hibernate.Session;
 
 import org.slf4j.Logger;
@@ -36,6 +42,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import com.github.curiousoddman.rgxgen.nodes.FinalSymbol;
 import com.github.f4b6a3.uuid.UuidCreator;
 
 record NextVersionPair(
@@ -54,6 +61,9 @@ public class ArticleVersionsService {
   private final ArticleTagsRepository articleTagsRepo;
   private final ArticleTypeRepository articleTypeRepo;
   private final PermissionsConfig permissionsConfig;
+  private final ArticleVersionMediaRepository articleVersionMediaRepo;
+  private final ArticleVersionMediaAssignmentRepository articleVersionMediaAssignmentRepo;
+  private final S3Service s3Service;
 
   @PersistenceContext
   private EntityManager entityManager;
@@ -63,11 +73,17 @@ public class ArticleVersionsService {
   public ArticleVersionsService(ArticleVersionRepository articleVersionRepo,
       ArticleTagsRepository articleTagsRepo,
       ArticleTypeRepository articleTypeRepo,
-      PermissionsConfig permissionsConfig) {
+      PermissionsConfig permissionsConfig,
+      ArticleVersionMediaRepository articleVersionMediaRepo,
+      ArticleVersionMediaAssignmentRepository articleVersionMediaAssignmentRepo,
+      S3Service s3Service) {
     this.articleVersionRepo = articleVersionRepo;
     this.articleTagsRepo = articleTagsRepo;
     this.articleTypeRepo = articleTypeRepo;
     this.permissionsConfig = permissionsConfig;
+    this.articleVersionMediaRepo = articleVersionMediaRepo;
+    this.articleVersionMediaAssignmentRepo = articleVersionMediaAssignmentRepo;
+    this.s3Service = s3Service;
   }
 
   private UserResolutionResult resolveApplicationUserIds(List<UUID> ids) {
@@ -143,6 +159,35 @@ public class ArticleVersionsService {
     }
   }
 
+  @Transactional
+  private void saveAllMediaToDB(ArticleVersion articleVersion,
+      List<CreateArticleVersionRequest.ArticleMediaRequest> mediaInput) {
+
+    List<String> articleVersionMediaKeys = mediaInput.stream()
+        .map(CreateArticleVersionRequest.ArticleMediaRequest::key)
+        .toList();
+
+    List<ArticleVersionMedia> articleVersionMedias = this.articleVersionMediaRepo
+        .findAllByKeyIn(articleVersionMediaKeys);
+    // System.out.println("Size: " + articleVersionMedias.size() + " should be: " +
+    // mediaInput.size());
+
+    // Check if all were valid
+    if (articleVersionMedias.size() != mediaInput.size()) {
+      throw new IllegalArgumentException("Non-existing media was added");
+    }
+
+    List<ArticleVersionMediaAssignment> mediaResult = new ArrayList<>(mediaInput.size());
+    for (int i = 0; i < mediaInput.size(); i++) {
+      ArticleVersionMediaAssignment temp = new ArticleVersionMediaAssignment(
+          articleVersion, articleVersionMedias.get(i), mediaInput.get(i).caption());
+      mediaResult.add(temp);
+      // System.out.println("Temporary: " + temp.toString());
+    }
+    // System.out.println(mediaResult);
+    this.articleVersionMediaAssignmentRepo.saveAll(mediaResult);
+  }
+
   public UUID createArticleVersion(CreateArticleVersionRequest request) {
     try {
       Set<ArticleTag> tags = request.tagIds().stream()
@@ -167,6 +212,9 @@ public class ArticleVersionsService {
           .build();
 
       articleVersionRepo.save(articleVersion);
+
+      List<CreateArticleVersionRequest.ArticleMediaRequest> articleVersionMedia = request.media();
+      saveAllMediaToDB(articleVersion, articleVersionMedia);
 
       return externalId;
     } catch (DataIntegrityViolationException e) {
@@ -227,13 +275,45 @@ public class ArticleVersionsService {
     }
   }
 
-  public List<ArticleVersion> getAllArticleVersionSubversionsByExternalId(UUID externalId) {
+  public List<ArticleVersionWithMedia> getAllArticleVersionSubversionsByExternalId(UUID externalId) {
     doAdminSupervisorRoleCheck();
     try {
       logger.debug("Attempting to fetch all ArticleVersion instances with external id: {}", externalId);
       List<ArticleVersion> temp = articleVersionRepo
           .findAllByExternalIdOrderByMajorVersionDescMinorVersionDesc(externalId);
-      return temp;
+
+      if (temp.size() == 0) {
+        throw new NoSuchElementException(
+            String.format("ArticleVersion with externalId %s does not exist", externalId));
+      }
+
+      List<List<ArticleVersionMediaAssignment>> mediaAssignments = new ArrayList<List<ArticleVersionMediaAssignment>>(
+          temp.size());
+
+      for (int i = 0; i < temp.size(); i++) {
+        mediaAssignments.add(
+            this.articleVersionMediaAssignmentRepo
+                .findAllByArticleVersion(temp.get(i)));
+      }
+
+      List<ArticleVersionWithMedia> result = new ArrayList<>(temp.size());
+      for (int i = 0; i < mediaAssignments.size(); i++) {
+        List<ArticleVersionWithMedia.Media> finalMedias = new ArrayList<>(mediaAssignments.get(i).size());
+        for (int j = 0; j < mediaAssignments.get(i).size(); j++) {
+          ArticleVersionWithMedia.Media tempMedia = new ArticleVersionWithMedia.Media(
+              this.s3Service.getPresignedUrl(
+                  mediaAssignments.get(i).get(j).getMedia().getKey()),
+              mediaAssignments.get(i).get(j).getCaption(),
+              mediaAssignments.get(i).get(j).getMedia().getFileName(),
+              mediaAssignments.get(i).get(j).getMedia().getMimeType());
+          finalMedias.add(tempMedia);
+        }
+        ArticleVersionWithMedia tempMedia = new ArticleVersionWithMedia(temp.get(i), finalMedias);
+        System.out.println("Contents: " + tempMedia.toString());
+        result.add(tempMedia);
+      }
+      return result;
+
     } catch (DataAccessException e) {
       logger.error("Database error while fetching all ArticleVersion subversion instances with external id {}: ",
           externalId, e);
@@ -259,7 +339,7 @@ public class ArticleVersionsService {
     }
   }
 
-  public Optional<ArticleVersion> getArticleVersionSubversion(UUID externalId, Integer majorVersion,
+  public ArticleVersionWithMedia getArticleVersionSubversion(UUID externalId, Integer majorVersion,
       Integer minorVersion) {
     ApplicationUser user = this.permissionsConfig.getAuthenticatedUser();
     doUserAuthorOrEditorCheck(user, externalId, majorVersion, minorVersion);
@@ -273,7 +353,25 @@ public class ArticleVersionsService {
       } else {
         temp = articleVersionRepo.findFirstByExternalIdOrderByMajorVersionDescMinorVersionDesc(externalId);
       }
-      return temp;
+      if (temp.isEmpty()) {
+        throw new NoSuchElementException(String.format(
+            "ArticleVersion subversion with externalId %s, majorVersion %d, and minorVersion %d does not exist",
+            externalId, majorVersion, minorVersion));
+      }
+
+      List<ArticleVersionMediaAssignment> tempMedia = this.articleVersionMediaAssignmentRepo
+          .findAllByArticleVersion(temp.get());
+
+      List<ArticleVersionWithMedia.Media> medias = new ArrayList<>(tempMedia.size());
+      for (int i = 0; i < tempMedia.size(); i++) {
+        medias.add(new ArticleVersionWithMedia.Media(
+            this.s3Service.getPresignedUrl(tempMedia.get(i).getMedia().getKey()),
+            tempMedia.get(i).getCaption(),
+            tempMedia.get(i).getMedia().getFileName(),
+            tempMedia.get(i).getMedia().getMimeType()));
+      }
+
+      return new ArticleVersionWithMedia(temp.get(), medias);
     } catch (DataAccessException e) {
       logger.error(
           "Database error while fetching ArticleVersion subversion instance with externalId {}, majorVersion {}, and minorVersion {}: ",

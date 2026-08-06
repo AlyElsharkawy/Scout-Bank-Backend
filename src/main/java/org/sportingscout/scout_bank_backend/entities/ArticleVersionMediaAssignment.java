@@ -11,12 +11,14 @@ import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Entity
 @IdClass(ArticleVersionMediaId.class)
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class ArticleVersionMediaAssignment {
   @Id
   @ManyToOne(fetch = FetchType.LAZY)
@@ -30,4 +32,13 @@ public class ArticleVersionMediaAssignment {
 
   @Column(nullable = true, length = 512)
   private String caption;
+
+  @Override
+  public String toString() {
+    return "ArticleVersionMediaAssignment{" +
+        "articleVersionId=" + (articleVersion != null ? articleVersion.getId() : null) +
+        ", mediaId=" + (media != null ? media.getId() : null) +
+        ", caption='" + caption + '\'' +
+        '}';
+  }
 }

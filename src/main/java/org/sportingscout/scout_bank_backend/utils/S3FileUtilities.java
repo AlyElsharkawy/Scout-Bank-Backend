@@ -1,11 +1,15 @@
 package org.sportingscout.scout_bank_backend.utils;
 
+import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
+
 import java.util.Set;
 import java.util.Optional;
 
 import java.time.LocalDate;
 
 import com.github.f4b6a3.uuid.UuidCreator;
+
+import jakarta.transaction.Transactional;
 
 public final class S3FileUtilities {
   public static final Set<String> ALLOWED_MEDIA_EXTENSIONS = Set.of(
@@ -18,7 +22,7 @@ public final class S3FileUtilities {
     if (fileName == null || fileName.isBlank()) {
       throw new IllegalArgumentException("File name cannot be empty");
     }
-    if (!fileName.matches("^[a-zA-Z0-9._-]+$")) {
+    if (!fileName.chars().allMatch(ch -> ch < 128)) {
       throw new IllegalArgumentException("File name can only contain standard English characters");
     }
     if (!hasValidExtension(fileName)) {
@@ -55,7 +59,8 @@ public final class S3FileUtilities {
         LocalDate.now().getMonthValue() + "/" +
         LocalDate.now().getDayOfMonth();
 
-    String finalKey = "articles/" + organizationName + "/" + dateSection + "/" +
+    String finalKey = "articles/" +
+        organizationName + "/" + dateSection + "/" +
         UuidCreator.getTimeBased() + "." +
         getFileExtension(fileName).get();
     return finalKey;

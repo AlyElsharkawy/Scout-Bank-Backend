@@ -3,6 +3,7 @@ package org.sportingscout.scout_bank_backend.controllers.articles;
 import org.sportingscout.scout_bank_backend.entities.ArticleVersion;
 import org.sportingscout.scout_bank_backend.entities.ArticleVersionEditorModifyOptions;
 import org.sportingscout.scout_bank_backend.services.articles.ArticleVersionsService;
+import org.sportingscout.scout_bank_backend.dtos.articles.ArticleVersionWithMedia;
 import org.sportingscout.scout_bank_backend.dtos.articles.CreateArticleVersionRequest;
 import org.sportingscout.scout_bank_backend.dtos.OperationResult;
 
@@ -58,7 +59,7 @@ public class ArticleVersionController {
   // This is called when you want to return all article version subversions
   // for a particular externalid
   @GetMapping("/{externalId}/all")
-  public ResponseEntity<List<ArticleVersion>> getAllArticleVersionSubversionsByExternalId(
+  public ResponseEntity<List<ArticleVersionWithMedia>> getAllArticleVersionSubversionsByExternalId(
       @PathVariable String externalId) {
     return ResponseEntity.ok(service.getAllArticleVersionSubversionsByExternalId(UUID.fromString(externalId)));
   }
@@ -67,20 +68,15 @@ public class ArticleVersionController {
   // By default, the latest subversion is returned
   // However, you can specify a specific version by query parameters
   @GetMapping("/{externalId}")
-  public ResponseEntity<ArticleVersion> getArticleVersionSubversion(
+  public ResponseEntity<ArticleVersionWithMedia> getArticleVersionSubversion(
       @PathVariable String externalId,
       @RequestParam(name = "majorVersion") Integer majorVersion,
       @RequestParam(name = "minorVersion") Integer minorVersion) {
 
-    return service.getArticleVersionSubversion(
+    return ResponseEntity.ok(service.getArticleVersionSubversion(
         UUID.fromString(externalId),
         majorVersion,
-        minorVersion)
-        .map(articleVersion -> ResponseEntity.ok(articleVersion))
-        .orElseThrow(
-            () -> new NoSuchElementException(String.format(
-                "ArticleVersion subversion with externalId %s, majorVersion %d, and minorVersion %d does not exist",
-                externalId, majorVersion, minorVersion)));
+        minorVersion));
   }
 
   // This is called when we create a new article version from scratch

@@ -63,6 +63,9 @@ public class Bootstrap implements CommandLineRunner {
   @Value("${bootstrap.root-password}")
   private String tempPassword;
 
+  @Value("${bootstrap.enable:false}")
+  private boolean bootstrapEnable;
+
   public Bootstrap(UsersRepository usersRepo, OrganizationsRepository organizationsRepo,
       UserRanksRepository userRanksRepo, UserRolesRepository userRolesRepo,
       PasswordEncoder passwordEncoder, ArticleTagsRepository articleTagsRepo,
@@ -75,7 +78,7 @@ public class Bootstrap implements CommandLineRunner {
     this.articleTagsRepo = articleTagsRepo;
     this.articleTypeRepo = articleTypeRepo;
 
-    if (tempPassword == null) {
+    if (tempPassword == null && bootstrapEnable) {
       tempPassword = egyptianFaker.internet().password(8, 8, true, false, true);
       System.out.println("Temp password is empty. Using this password instead: " + tempPassword);
     }
@@ -84,7 +87,7 @@ public class Bootstrap implements CommandLineRunner {
   @Override
   public void run(String... args) throws Exception {
     ApplicationUser rootUser = null;
-    if (createRanks) {
+    if (createRanks && bootstrapEnable) {
       UserRank smurfsRank = new UserRank("Smurfs",
           "Our youngest members who start their scouting journey through play, exploration, and basic outdoor skills.",
           7, 9);
@@ -113,13 +116,13 @@ public class Bootstrap implements CommandLineRunner {
       userRanksRepo.save(leaderRank);
     }
 
-    if (createOrganizations) {
+    if (createOrganizations && bootstrapEnable) {
       Organization sportingScout = new Organization("Alexandria Sporting Scouts",
           "The Sporting Scouts are an Alexandria-based scouting organization headquartered at Sporting Club, Alexandria");
       organizationsRepo.save(sportingScout);
     }
 
-    if (createRoles) {
+    if (createRoles && bootstrapEnable) {
       UserRole viewerRole = new UserRole("Viewer",
           "Access is restricted to read-only capabilities. Members assigned to this role are permitted to browse and read all publicly available platform content but do not possess permissions to create, modify, or delete data.",
           Set.of());
@@ -197,7 +200,7 @@ public class Bootstrap implements CommandLineRunner {
     Optional<UserRole> tempViewerRole = userRolesRepo.findByName("Viewer");
     UserRole finalViewerRole = tempViewerRole.isPresent() ? tempViewerRole.get() : null;
 
-    if (createRoot) {
+    if (createRoot && bootstrapEnable) {
       rootUser = ApplicationUser.builder()
           .name("Root User")
           .email("root@example.com")
@@ -211,7 +214,7 @@ public class Bootstrap implements CommandLineRunner {
       usersRepo.save(rootUser);
     }
 
-    if (createUsers) {
+    if (createUsers && bootstrapEnable) {
       for (int i = 0; i < 5; i++) {
         tempPassword = egyptianFaker.internet().password(8, 8, true, false, true);
         ApplicationUser tempUser = ApplicationUser.builder()
@@ -229,7 +232,7 @@ public class Bootstrap implements CommandLineRunner {
       }
     }
 
-    if (createTags) {
+    if (createTags && bootstrapEnable) {
       List<ArticleTag> tags = List.of(
           new ArticleTag("EN"), new ArticleTag("AR"), new ArticleTag("Fire"),
           new ArticleTag("History"),
@@ -244,7 +247,7 @@ public class Bootstrap implements CommandLineRunner {
       }
     }
 
-    if (createTypes) {
+    if (createTypes && bootstrapEnable) {
       List<ArticleType> types = List.of(
           new ArticleType("Tutorial",
               "Tutorial articles are designed to teach the reader how to achieve a certain goal or perform a certain action in a step by step process"),

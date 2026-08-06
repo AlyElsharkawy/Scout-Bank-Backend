@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.sportingscout.scout_bank_backend.services.S3Service;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/media")
@@ -55,9 +56,15 @@ public class S3Controller {
   }
 
   @GetMapping
-  public ResponseEntity<List<String>> listFiles(
+  public ResponseEntity<List<Map<String, String>>> listFiles(
+      @RequestParam(name = "keyword", required = false, defaultValue = "") String searchTerm) {
+    return ResponseEntity.ok(service.listFiles(searchTerm));
+  }
+
+  @GetMapping("/prefix")
+  public ResponseEntity<List<String>> listFilesInPrefix(
       @RequestParam(name = "prefix", required = false, defaultValue = "") String prefix) {
-    return ResponseEntity.ok(service.listFiles(prefix));
+    return ResponseEntity.ok(service.listFilesInPrefix(prefix));
   }
 
   @DeleteMapping
