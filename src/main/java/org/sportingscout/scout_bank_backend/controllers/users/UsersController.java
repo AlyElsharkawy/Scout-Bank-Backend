@@ -75,10 +75,14 @@ public class UsersController {
       e.printStackTrace();
     }
 
-    if (principal instanceof User springUser) {
+    // Note: Yes, this code is terrible. I must admit it
+    // However, it shall remain until the entire authentication scheme is refactored
+    // to stateful tokens
+    if (principal instanceof ApplicationUser springUser) {
       String email = springUser.getUsername();
 
       Optional<ApplicationUser> temp = usersService.getUserByEmail(email);
+      System.out.println("Is Present: " + temp.isPresent());
       if (temp.isPresent()) {
         return ResponseEntity.ok(temp.get().getId());
       }
