@@ -22,8 +22,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Positive;
-import jakarta.websocket.server.PathParam;
 
 import java.util.List;
 import java.util.UUID;
@@ -38,8 +38,9 @@ record TagRequest(
 }
 
 record ArticleMediaRequest(
-    @NotBlank String key,
-    @NotBlank String caption) {
+    List<@NotBlank String> keys,
+    List<@NotBlank String> captions,
+    @NotBlank @Size(max = 511, message = "Update note cannot exceed 511 characters") String updateNote) {
 }
 
 @RestController
@@ -190,19 +191,18 @@ public class ArticleVersionController {
       @RequestParam(name = "majorVersion") Integer majorVersion,
       @RequestParam(name = "minorVersion") Integer minorVersion,
       @RequestParam(name = "incrementMinor", required = false, defaultValue = "true") Boolean incrementMinor,
-      @Valid @RequestBody List<ArticleMediaRequest> request) {
+      @Valid @RequestBody ArticleMediaRequest request) {
 
-    List<String> keys = request.stream()
-        .map(ArticleMediaRequest::key)
-        .toList();
-
-    List<String> captions = request.stream()
-        .map(ArticleMediaRequest::caption)
-        .toList();
-
-    return ResponseEntity.ok(
-        this.service.addArticleMediaAssignment(
-            UUID.fromString(externalId), majorVersion, minorVersion,
-            incrementMinor, keys, captions));
+    if (addMedia) {
+      return ResponseEntity.ok(
+          this.service.addArticleMediaAssignment(
+              UUID.fromString(externalId), majorVersion, minorVersion,
+              incrementMinor, request.keys(), request.captions(), request.updateNote()));
+    } else {
+      return ResponseEntity.ok(
+          this.service.removeArticleMediaAssignment(
+              UUID.fromString(externalId), majorVersion, minorVersion, incrementMinor,
+              request.keys(), request.updateNote()));
+    }
   }
 }

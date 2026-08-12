@@ -2,6 +2,7 @@ package org.sportingscout.scout_bank_backend.repositories.articles;
 
 import org.sportingscout.scout_bank_backend.entities.ArticleVersionMediaAssignment;
 import org.sportingscout.scout_bank_backend.entities.ArticleVersion;
+import org.sportingscout.scout_bank_backend.entities.ArticleVersionMedia;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -19,8 +20,16 @@ public interface ArticleVersionMediaAssignmentRepository
   @EntityGraph(attributePaths = { "media" })
   List<ArticleVersionMediaAssignment> findAllByArticleVersion(ArticleVersion articleVersion);
 
-  @Modifying
+  List<ArticleVersionMediaAssignment> findByArticleVersionAndMediaIn(
+      ArticleVersion articleVersion,
+      List<ArticleVersionMedia> mediaList);
+
+  Long deleteByArticleVersionAndMediaIn(
+      ArticleVersion articleVersion,
+      List<ArticleVersionMedia> mediaList);
+
   @Transactional
+  @Modifying
   @Query(value = """
       INSERT INTO article_version_media_assignment (article_version_id, article_version_media_id,
         caption, assignment_date)

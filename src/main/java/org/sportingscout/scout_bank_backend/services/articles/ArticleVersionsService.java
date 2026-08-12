@@ -515,17 +515,21 @@ public class ArticleVersionsService {
   public OperationResult<Void> addArticleMediaAssignment(
       UUID externalId, Integer majorVersion, Integer minorVersion,
       Boolean incrementMinor,
-      List<String> keys, List<String> captions) {
+      List<String> keys, List<String> captions, String updateNote) {
 
-    Optional<ArticleVersion> articleVersion = this.articleVersionRepo
+    Optional<ArticleVersion> previous = this.articleVersionRepo
         .findByExternalIdAndMajorVersionAndMinorVersion(
             externalId, majorVersion, minorVersion);
 
-    if (articleVersion.isEmpty()) {
+    if (previous.isEmpty()) {
       throw new NoSuchElementException(String.format(
           "ArticleVersion with externalId %s, majorVersion %d, and minorVersion %d does not exist",
           externalId.toString(), majorVersion, minorVersion));
     }
+
+    ArticleVersion newArticleVersion = forkArticleSubversion(
+        previous.get(), incrementMinor, updateNote);
+    newArticleVersion = this.articleVersionRepo.save(newArticleVersion);
 
     // I will look into this in the future and see if there is a more efficient way
     // that doesn't require YET ANOTHER CLASS
@@ -560,9 +564,42 @@ public class ArticleVersionsService {
     List<ArticleVersionMediaAssignment> assignments = new ArrayList<>(validKeys.size());
     for (int i = 0; i < validKeys.size(); i++) {
       assignments.add(new ArticleVersionMediaAssignment(
-          articleVersion.get(), media.get(i), validCaptions.get(i)));
+          newArticleVersion, media.get(i), validCaptions.get(i)));
     }
     this.articleVersionMediaAssignmentRepo.saveAll(assignments);
+
+    return OperationResult.withWarnings(null, invalidKeys);
+  }
+
+  @Transactional
+  public OperationResult<Void> removeArticleMediaAssignment(
+      UUID externalId, Integer majorVersion, Integer minorVersion,
+      Boolean incrementMinor, List<String> keys, String updateNote) {
+    Optional<ArticleVersion> previous = this.articleVersionRepo
+        .findByExternalIdAndMajorVersionAndMinorVersion(externalId, majorVersion, minorVersion);
+
+    if (previous.isEmpty()) {
+      throw new NoSuchElementException(String.format(
+          "ArticleVersion with externalId %s, majorVersion %d, and minorVersion %d does not exist",
+          externalId.toString(), majorVersion, minorVersion));
+    }
+
+    ArticleVersion newArticleVersion = forkArticleSubversion(
+        previous.get(), incrementMinor, updateNote);
+    newArticleVersion = this.articleVersionRepo.save(newArticleVersion);
+
+    List<String> invalidKeys = new ArrayList<>(Math.ceilDiv(keys.size(), 4));
+    List<ArticleVersionMedia> medias = new ArrayList<>(keys.size());
+    for (String key : keys) {
+      Optional<ArticleVersionMedia> tempMedia = this.articleVersionMediaRepo.findByKey(key);
+      if (tempMedia.isEmpty()) {
+        invalidKeys.add(key);
+      } else {
+        medias.add(tempMedia.get());
+      }
+    }
+
+    this.articleVersionMediaAssignmentRepo.deleteByArticleVersionAndMediaIn(newArticleVersion, medias);
 
     return OperationResult.withWarnings(null, invalidKeys);
   }
