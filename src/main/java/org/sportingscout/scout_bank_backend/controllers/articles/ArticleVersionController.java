@@ -1,6 +1,5 @@
 package org.sportingscout.scout_bank_backend.controllers.articles;
 
-import org.sportingscout.scout_bank_backend.entities.ArticleVersion;
 import org.sportingscout.scout_bank_backend.entities.ArticleVersionEditorModifyOptions;
 import org.sportingscout.scout_bank_backend.services.articles.ArticleVersionsService;
 import org.sportingscout.scout_bank_backend.dtos.articles.ArticleVersionWithMedia;
@@ -24,9 +23,9 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
+import jakarta.websocket.server.PathParam;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 record EditorRequest(
@@ -36,6 +35,11 @@ record EditorRequest(
 record TagRequest(
     List<@Positive(message = "Tag IDs must be positive") Long> tagIds,
     @NotBlank(message = "Update Note cannot be blank") String updateNote) {
+}
+
+record ArticleMediaRequest(
+    @NotBlank String key,
+    @NotBlank String caption) {
 }
 
 @RestController
@@ -51,7 +55,7 @@ public class ArticleVersionController {
   // This is called when you want to return all article version subversions
   // ...if you would ever want to do that
   @GetMapping("/all")
-  public ResponseEntity<List<ArticleVersion>> getAllArticleVersionSubversions(
+  public ResponseEntity<List<ArticleVersionWithMedia>> getAllArticleVersionSubversions(
       String externalId) {
     return ResponseEntity.ok(service.getAllArticleVersionSubversions());
   }
@@ -176,5 +180,29 @@ public class ArticleVersionController {
     }
 
     return ResponseEntity.ok(result);
+  }
+
+  @PostMapping("/{externalId}/media")
+  @PreAuthorize("@auth.has('article:edit')")
+  public ResponseEntity<OperationResult<Void>> addMediaToArticleVersion(
+      @PathVariable String externalId,
+      @RequestParam(name = "addMedia", defaultValue = "true", required = false) Boolean addMedia,
+      @RequestParam(name = "majorVersion") Integer majorVersion,
+      @RequestParam(name = "minorVersion") Integer minorVersion,
+      @RequestParam(name = "incrementMinor", required = false, defaultValue = "true") Boolean incrementMinor,
+      @Valid @RequestBody List<ArticleMediaRequest> request) {
+
+    List<String> keys = request.stream()
+        .map(ArticleMediaRequest::key)
+        .toList();
+
+    List<String> captions = request.stream()
+        .map(ArticleMediaRequest::caption)
+        .toList();
+
+    return ResponseEntity.ok(
+        this.service.addArticleMediaAssignment(
+            UUID.fromString(externalId), majorVersion, minorVersion,
+            incrementMinor, keys, captions));
   }
 }

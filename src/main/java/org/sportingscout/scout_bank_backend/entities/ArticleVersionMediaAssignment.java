@@ -8,10 +8,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 
+import org.hibernate.annotations.CreationTimestamp;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
+import java.time.Instant;
 
 @Entity
 @IdClass(ArticleVersionMediaId.class)
@@ -33,6 +37,9 @@ public class ArticleVersionMediaAssignment {
   @Column(nullable = true, length = 512)
   private String caption;
 
+  @CreationTimestamp
+  private Instant assignmentDate;
+
   @Override
   public String toString() {
     return "ArticleVersionMediaAssignment{" +
@@ -40,5 +47,13 @@ public class ArticleVersionMediaAssignment {
         ", mediaId=" + (media != null ? media.getId() : null) +
         ", caption='" + caption + '\'' +
         '}';
+  }
+
+  public ArticleVersionMediaAssignment(ArticleVersion articleVersion,
+      ArticleVersionMedia articleVersionMedia,
+      String caption) {
+    this.articleVersion = articleVersion;
+    this.media = articleVersionMedia;
+    this.caption = caption;
   }
 }

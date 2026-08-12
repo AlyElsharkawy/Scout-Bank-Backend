@@ -26,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.EntityManager;
 
-import org.aspectj.weaver.TemporaryTypeMunger;
 import org.hibernate.Session;
 
 import org.slf4j.Logger;
@@ -42,7 +41,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import com.github.curiousoddman.rgxgen.nodes.FinalSymbol;
 import com.github.f4b6a3.uuid.UuidCreator;
 
 record NextVersionPair(
@@ -275,44 +273,46 @@ public class ArticleVersionsService {
     }
   }
 
+  private List<ArticleVersionWithMedia> assignMediaToArticleSubversions(List<ArticleVersion> articleSubversionsInput) {
+    List<List<ArticleVersionMediaAssignment>> mediaAssignments = new ArrayList<List<ArticleVersionMediaAssignment>>(
+        articleSubversionsInput.size());
+
+    for (int i = 0; i < articleSubversionsInput.size(); i++) {
+      mediaAssignments.add(
+          this.articleVersionMediaAssignmentRepo
+              .findAllByArticleVersion(articleSubversionsInput.get(i)));
+    }
+
+    List<ArticleVersionWithMedia> result = new ArrayList<>(articleSubversionsInput.size());
+    for (int i = 0; i < mediaAssignments.size(); i++) {
+      List<ArticleVersionWithMedia.Media> finalMedias = new ArrayList<>(mediaAssignments.get(i).size());
+      for (int j = 0; j < mediaAssignments.get(i).size(); j++) {
+        ArticleVersionWithMedia.Media tempMedia = new ArticleVersionWithMedia.Media(
+            this.s3Service.getPresignedUrl(
+                mediaAssignments.get(i).get(j).getMedia().getKey()),
+            mediaAssignments.get(i).get(j).getCaption(),
+            mediaAssignments.get(i).get(j).getMedia().getFileName(),
+            mediaAssignments.get(i).get(j).getMedia().getMimeType());
+        finalMedias.add(tempMedia);
+      }
+      ArticleVersionWithMedia tempMedia = new ArticleVersionWithMedia(articleSubversionsInput.get(i), finalMedias);
+      result.add(tempMedia);
+    }
+    return result;
+  }
+
   public List<ArticleVersionWithMedia> getAllArticleVersionSubversionsByExternalId(UUID externalId) {
     doAdminSupervisorRoleCheck();
     try {
       logger.debug("Attempting to fetch all ArticleVersion instances with external id: {}", externalId);
-      List<ArticleVersion> temp = articleVersionRepo
+      List<ArticleVersion> articleSubversionsInput = articleVersionRepo
           .findAllByExternalIdOrderByMajorVersionDescMinorVersionDesc(externalId);
-
-      if (temp.size() == 0) {
-        throw new NoSuchElementException(
-            String.format("ArticleVersion with externalId %s does not exist", externalId));
+      if (articleSubversionsInput.size() == 0) {
+        throw new NoSuchElementException(String.format(
+            "ArticleVersion with externalId %s does not exist", externalId.toString()));
       }
 
-      List<List<ArticleVersionMediaAssignment>> mediaAssignments = new ArrayList<List<ArticleVersionMediaAssignment>>(
-          temp.size());
-
-      for (int i = 0; i < temp.size(); i++) {
-        mediaAssignments.add(
-            this.articleVersionMediaAssignmentRepo
-                .findAllByArticleVersion(temp.get(i)));
-      }
-
-      List<ArticleVersionWithMedia> result = new ArrayList<>(temp.size());
-      for (int i = 0; i < mediaAssignments.size(); i++) {
-        List<ArticleVersionWithMedia.Media> finalMedias = new ArrayList<>(mediaAssignments.get(i).size());
-        for (int j = 0; j < mediaAssignments.get(i).size(); j++) {
-          ArticleVersionWithMedia.Media tempMedia = new ArticleVersionWithMedia.Media(
-              this.s3Service.getPresignedUrl(
-                  mediaAssignments.get(i).get(j).getMedia().getKey()),
-              mediaAssignments.get(i).get(j).getCaption(),
-              mediaAssignments.get(i).get(j).getMedia().getFileName(),
-              mediaAssignments.get(i).get(j).getMedia().getMimeType());
-          finalMedias.add(tempMedia);
-        }
-        ArticleVersionWithMedia tempMedia = new ArticleVersionWithMedia(temp.get(i), finalMedias);
-        System.out.println("Contents: " + tempMedia.toString());
-        result.add(tempMedia);
-      }
-      return result;
+      return assignMediaToArticleSubversions(articleSubversionsInput);
 
     } catch (DataAccessException e) {
       logger.error("Database error while fetching all ArticleVersion subversion instances with external id {}: ",
@@ -324,12 +324,12 @@ public class ArticleVersionsService {
     }
   }
 
-  public List<ArticleVersion> getAllArticleVersionSubversions() {
+  public List<ArticleVersionWithMedia> getAllArticleVersionSubversions() {
     doAdminSupervisorRoleCheck();
     try {
       logger.debug("Attempting to fetch all ArticleVersion instances");
       List<ArticleVersion> temp = articleVersionRepo.findAll();
-      return temp;
+      return assignMediaToArticleSubversions(temp);
     } catch (DataAccessException e) {
       logger.error("Database error while fetching all ArticleVersion subversion instances: ", e);
       throw e;
@@ -458,47 +458,112 @@ public class ArticleVersionsService {
     return OperationResult.withWarnings(null, warnings);
   }
 
+  private ArticleVersion forkArticleSubversion(ArticleVersion previous, boolean incrementMinor,
+      String updateNote) {
+    ArticleVersion newSubversion = ArticleVersion.builder()
+        .title(previous.getTitle())
+        .content(previous.getContent())
+        .externalId(previous.getExternalId())
+        .editors(new HashSet<>(previous.getEditors()))
+        .author(previous.getAuthor())
+        .type(previous.getType())
+        .updateNote(updateNote)
+        .build();
+
+    NextVersionPair nextVersionPair = getNextVersion(incrementMinor, previous.getExternalId());
+    newSubversion.setMajorVersion(nextVersionPair.majorVersion());
+    newSubversion.setMinorVersion(nextVersionPair.minorVersion());
+
+    newSubversion.setPreviousMajorVersion(previous.getMajorVersion());
+    newSubversion.setPreviousMinorVersion(previous.getMinorVersion());
+
+    return newSubversion;
+  }
+
   public void modifyArticleVersionTags(boolean incrementMinor, boolean addTags,
       UUID externalId, Integer majorVersion, Integer minorVersion,
       List<Long> tagIds, String updateNote) {
     // If add
-    ArticleVersion existing = this.articleVersionRepo
+    ArticleVersion previous = this.articleVersionRepo
         .findByExternalIdAndMajorVersionAndMinorVersion(externalId, majorVersion, minorVersion)
         .orElseThrow(() -> new NoSuchElementException(String.format(
             "ArticleVersion subversion with externalId %s, majorVersion %d, and minorVersion %d does not exist",
             externalId, majorVersion, minorVersion)));
 
-    ArticleVersion newSubversion = ArticleVersion.builder()
-        .title(existing.getTitle())
-        .content(existing.getContent())
-        .majorVersion(existing.getMajorVersion())
-        .minorVersion(existing.getMinorVersion() + 1)
-        .externalId(existing.getExternalId())
-        .editors(new HashSet<>(existing.getEditors()))
-        .author(existing.getAuthor())
-        .type(existing.getType())
-        .updateNote(updateNote)
-        .build();
-
-    NextVersionPair nextVersionPair = getNextVersion(incrementMinor, externalId);
-    newSubversion.setMajorVersion(nextVersionPair.majorVersion());
-    newSubversion.setMinorVersion(nextVersionPair.minorVersion());
-
-    newSubversion.setPreviousMajorVersion(existing.getMajorVersion());
-    newSubversion.setPreviousMinorVersion(existing.getMinorVersion());
+    ArticleVersion newSubversion = forkArticleSubversion(previous, incrementMinor, updateNote);
 
     Set<ArticleTag> newTags = tagIds.stream()
         .map(this.articleTagsRepo::getReferenceById)
         .collect(Collectors.toSet());
 
     if (addTags) {
-      existing.getTags().addAll(newTags);
+      previous.getTags().addAll(newTags);
     } else {
-      existing.getTags().removeAll(newTags);
+      previous.getTags().removeAll(newTags);
     }
 
-    newSubversion.setTags(new HashSet<>(existing.getTags()));
+    newSubversion.setTags(new HashSet<>(previous.getTags()));
     // TODO: Add exception handling later
-    this.articleVersionRepo.save(newSubversion);
+    Long newId = this.articleVersionRepo.save(newSubversion).getId();
+
+    // As of now, the article has been forked and a new subversion combination
+    // has been assigned correctly
+    // However, we did not also fork the media assignments
+    this.articleVersionMediaAssignmentRepo.duplicateAssignmentsForVersion(previous.getId(), newId);
+  }
+
+  public OperationResult<Void> addArticleMediaAssignment(
+      UUID externalId, Integer majorVersion, Integer minorVersion,
+      Boolean incrementMinor,
+      List<String> keys, List<String> captions) {
+
+    Optional<ArticleVersion> articleVersion = this.articleVersionRepo
+        .findByExternalIdAndMajorVersionAndMinorVersion(
+            externalId, majorVersion, minorVersion);
+
+    if (articleVersion.isEmpty()) {
+      throw new NoSuchElementException(String.format(
+          "ArticleVersion with externalId %s, majorVersion %d, and minorVersion %d does not exist",
+          externalId.toString(), majorVersion, minorVersion));
+    }
+
+    // I will look into this in the future and see if there is a more efficient way
+    // that doesn't require YET ANOTHER CLASS
+    // There likely won't be more than a few invalid keys
+    List<String> invalidKeys = new ArrayList<>(Math.ceilDiv(keys.size(), 4));
+
+    List<String> validKeys = new ArrayList<String>(keys);
+    List<String> validCaptions = new ArrayList<String>(captions);
+    int index = 0;
+    for (String key : keys) {
+      if (!this.articleVersionMediaRepo.existsByKey(key)) {
+        invalidKeys.add(key);
+        validCaptions.remove(index);
+      }
+      index++;
+    }
+    validKeys.removeAll(invalidKeys);
+
+    // Convert the keys into full ArticleVersionMedia objects
+    // TODO: MAKE THIS A NATURAL ID FOR PERFORMANCE
+    // However, I want to finish the MVP of the project first so this optimizaiton
+    // is for later
+    // fetching 511 extra bytes never hurt anyone
+    List<ArticleVersionMedia> media = this.articleVersionMediaRepo
+        .findAllByKeyIn(validKeys);
+
+    if (media.size() != validKeys.size()) {
+      // Database failed partway
+      throw new RuntimeException("Database error during media assignment");
+    }
+
+    List<ArticleVersionMediaAssignment> assignments = new ArrayList<>(validKeys.size());
+    for (int i = 0; i < validKeys.size(); i++) {
+      assignments.add(new ArticleVersionMediaAssignment(
+          articleVersion.get(), media.get(i), validCaptions.get(i)));
+    }
+    this.articleVersionMediaAssignmentRepo.saveAll(assignments);
+
+    return OperationResult.withWarnings(null, invalidKeys);
   }
 }

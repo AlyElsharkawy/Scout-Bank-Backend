@@ -12,7 +12,11 @@ public interface ArticleVersionMediaRepository extends JpaRepository<ArticleVers
 
   Optional<ArticleVersionMedia> findByKey(String key);
 
+  List<ArticleVersionMedia> findByKeyIn(List<String> keys);
+
   List<ArticleVersionMedia> findAllByKeyIn(List<String> keys);
 
   List<ArticleVersionMedia> findByFileNameContainingIgnoreCase(String keyword);
+
+  boolean existsByKey(String key);
 }

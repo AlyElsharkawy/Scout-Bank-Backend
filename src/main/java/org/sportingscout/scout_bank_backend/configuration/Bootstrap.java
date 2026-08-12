@@ -12,6 +12,9 @@ import org.sportingscout.scout_bank_backend.repositories.UserRanksRepository;
 import org.sportingscout.scout_bank_backend.repositories.UserRolesRepository;
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleTagsRepository;
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleTypeRepository;
+import org.sportingscout.scout_bank_backend.repositories.articles.ArticleRepository;
+import org.sportingscout.scout_bank_backend.repositories.articles.ArticleVersionRepository;
+import org.sportingscout.scout_bank_backend.repositories.articles.ArticleVersionMediaAssignmentRepository;
 import org.sportingscout.scout_bank_backend.security.Permissions;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -29,12 +32,18 @@ import net.datafaker.Faker;
 
 @Component
 public class Bootstrap implements CommandLineRunner {
-  private final UsersRepository usersRepo;
   private final OrganizationsRepository organizationsRepo;
+
+  private final UsersRepository usersRepo;
   private final UserRanksRepository userRanksRepo;
   private final UserRolesRepository userRolesRepo;
+
   private final ArticleTagsRepository articleTagsRepo;
   private final ArticleTypeRepository articleTypeRepo;
+  private final ArticleRepository articleRepo;
+  private final ArticleVersionMediaAssignmentRepository articleVersionMediaAssignmentRepo;
+  private final ArticleVersionRepository articleVersionRepo;
+
   private final PasswordEncoder passwordEncoder;
   private static final Faker egyptianFaker = new Faker(Locale.of("ar", "EG"));
   private static final Faker faker = new Faker();
@@ -66,17 +75,29 @@ public class Bootstrap implements CommandLineRunner {
   @Value("${bootstrap.enable:false}")
   private boolean bootstrapEnable;
 
+  @Value("${bootstrap.remove-previous-articles:false}")
+  private boolean removePreviousArticles;
+
   public Bootstrap(UsersRepository usersRepo, OrganizationsRepository organizationsRepo,
       UserRanksRepository userRanksRepo, UserRolesRepository userRolesRepo,
       PasswordEncoder passwordEncoder, ArticleTagsRepository articleTagsRepo,
-      ArticleTypeRepository articleTypeRepo) {
-    this.usersRepo = usersRepo;
+      ArticleTypeRepository articleTypeRepo,
+      ArticleRepository articleRepo,
+      ArticleVersionRepository articleVersionRepo,
+      ArticleVersionMediaAssignmentRepository articleVersionMediaAssignmentRepo) {
     this.organizationsRepo = organizationsRepo;
-    this.passwordEncoder = passwordEncoder;
+
+    this.usersRepo = usersRepo;
     this.userRanksRepo = userRanksRepo;
     this.userRolesRepo = userRolesRepo;
+
+    this.passwordEncoder = passwordEncoder;
+
     this.articleTagsRepo = articleTagsRepo;
     this.articleTypeRepo = articleTypeRepo;
+    this.articleRepo = articleRepo;
+    this.articleVersionRepo = articleVersionRepo;
+    this.articleVersionMediaAssignmentRepo = articleVersionMediaAssignmentRepo;
 
     if (tempPassword == null && bootstrapEnable) {
       tempPassword = egyptianFaker.internet().password(8, 8, true, false, true);
@@ -265,6 +286,12 @@ public class Bootstrap implements CommandLineRunner {
           articleTypeRepo.save(type);
         }
       }
+    }
+
+    if (removePreviousArticles) {
+      this.articleVersionMediaAssignmentRepo.deleteAll();
+      this.articleRepo.deleteAll();
+      this.articleVersionRepo.deleteAll();
     }
   }
 }
