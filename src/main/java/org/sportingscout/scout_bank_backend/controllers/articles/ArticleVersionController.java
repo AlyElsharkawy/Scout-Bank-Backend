@@ -1,5 +1,6 @@
 package org.sportingscout.scout_bank_backend.controllers.articles;
 
+import org.sportingscout.scout_bank_backend.entities.ApprovalStatus;
 import org.sportingscout.scout_bank_backend.entities.ArticleVersionEditorModifyOptions;
 import org.sportingscout.scout_bank_backend.services.articles.ArticleVersionsService;
 import org.sportingscout.scout_bank_backend.dtos.articles.ArticleVersionWithMedia;
@@ -21,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Positive;
@@ -41,6 +43,11 @@ record ArticleMediaRequest(
     List<@NotBlank String> keys,
     List<@NotBlank String> captions,
     @NotBlank @Size(max = 511, message = "Update note cannot exceed 511 characters") String updateNote) {
+}
+
+record ArticleReviewRequest(
+    @Size(max = 1023, message = "Review note cannot exceed 1023 characters") String reviewNote,
+    @NotNull(message = "ApprovalStatus is required") ApprovalStatus status) {
 }
 
 @RestController
@@ -204,5 +211,32 @@ public class ArticleVersionController {
               UUID.fromString(externalId), majorVersion, minorVersion, incrementMinor,
               request.keys(), request.updateNote()));
     }
+  }
+
+  // When you want to submit an article version subversion for review
+  // DOES NOT create new ArticleVersion subversion
+  @PatchMapping("/{externalId}/submit")
+  @PreAuthorize("@auth.has('article:edit')")
+  public ResponseEntity<Void> submitForReview(
+      @PathVariable String externalId,
+      @RequestParam(name = "majorVersion") Integer majorVersion,
+      @RequestParam(name = "minorVersion") Integer minorVersion) {
+    this.service.submitArticleVersionSubversion(
+        UUID.fromString(externalId), majorVersion, minorVersion);
+
+    return ResponseEntity.ok().build();
+  }
+
+  @PatchMapping("/{externalId}/review")
+  @PreAuthorize("@auth.has('article:review')")
+  public ResponseEntity<Void> reviewArticleVersionSubversion(
+      @PathVariable String externalId,
+      @RequestParam(name = "majorVersion") Integer majorVersion,
+      @RequestParam(name = "minorVersion") Integer minorVersion,
+      @Valid @RequestBody ArticleReviewRequest request) {
+
+    this.service.reviewArticleVersion(UUID.fromString(externalId), majorVersion, minorVersion,
+        request.reviewNote(), request.status());
+    return ResponseEntity.ok().build();
   }
 }

@@ -10,6 +10,7 @@ import org.sportingscout.scout_bank_backend.entities.ArticleVersionMediaAssignme
 import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
 import org.sportingscout.scout_bank_backend.entities.ArticleTag;
 import org.sportingscout.scout_bank_backend.entities.ArticleType;
+import org.sportingscout.scout_bank_backend.entities.ApprovalStatus;
 import org.sportingscout.scout_bank_backend.dtos.articles.CreateArticleVersionRequest;
 import org.sportingscout.scout_bank_backend.dtos.articles.ArticleVersionWithMedia;
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleVersionRepository;
@@ -24,6 +25,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.PersistenceContext;
+import net.datafaker.providers.base.App;
 import jakarta.persistence.EntityManager;
 
 import org.hibernate.Session;
@@ -602,5 +604,49 @@ public class ArticleVersionsService {
     this.articleVersionMediaAssignmentRepo.deleteByArticleVersionAndMediaIn(newArticleVersion, medias);
 
     return OperationResult.withWarnings(null, invalidKeys);
+  }
+
+  public void submitArticleVersionSubversion(
+      UUID externalId, Integer majorVersion, Integer minorVersion) {
+    Optional<ArticleVersion> previous = this.articleVersionRepo
+        .findByExternalIdAndMajorVersionAndMinorVersion(externalId, majorVersion, minorVersion);
+
+    if (previous.isEmpty()) {
+      throw new NoSuchElementException(String.format(
+          "ArticleVersion with externalId %s, majorVersion %d, and minorVersion %d does not exist",
+          externalId.toString(), majorVersion, minorVersion));
+    }
+
+    if (!previous.get().getStatus().equals(ApprovalStatus.DRAFT)) {
+      throw new IllegalArgumentException("Article is not a draft");
+    }
+
+    previous.get().setStatus(ApprovalStatus.PENDING_REVIEW, "", null);
+    this.articleVersionRepo.save(previous.get());
+  }
+
+  public void reviewArticleVersion(
+      UUID externalId, Integer majorVersion, Integer minorVersion, String reviewNote,
+      ApprovalStatus newStatus) {
+    Optional<ArticleVersion> previous = this.articleVersionRepo
+        .findByExternalIdAndMajorVersionAndMinorVersion(externalId, majorVersion, minorVersion);
+
+    if (previous.isEmpty()) {
+      throw new NoSuchElementException(String.format(
+          "ArticleVersion with externalId %s, majorVersion %d, and minorVersion %d does not exist",
+          externalId.toString(), majorVersion, minorVersion));
+    }
+
+    if (previous.get().getStatus().equals(ApprovalStatus.DRAFT)) {
+      throw new IllegalArgumentException("Draft has not been submitted for review");
+    }
+
+    if (!previous.get().getStatus().equals(ApprovalStatus.PENDING_REVIEW)) {
+      throw new IllegalArgumentException("ArticleVersion subversion has already been reviewed");
+    }
+
+    ApplicationUser loggedInUser = permissionsConfig.getAuthenticatedUser();
+    previous.get().setStatus(newStatus, reviewNote, loggedInUser);
+    this.articleVersionRepo.save(previous.get());
   }
 }
