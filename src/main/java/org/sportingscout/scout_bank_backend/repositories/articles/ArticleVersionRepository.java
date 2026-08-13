@@ -1,5 +1,6 @@
 package org.sportingscout.scout_bank_backend.repositories.articles;
 
+import org.sportingscout.scout_bank_backend.entities.ApprovalStatus;
 import org.sportingscout.scout_bank_backend.entities.ArticleVersion;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,6 +17,8 @@ public interface ArticleVersionRepository extends JpaRepository<ArticleVersion, 
   Optional<ArticleVersion> findByExternalId(UUID id);
 
   Optional<ArticleVersion> findFirstByExternalIdOrderByMajorVersionDescMinorVersionDesc(UUID externalId);
+
+  List<ArticleVersion> findAllByExternalIdAndStatus(UUID externalId, ApprovalStatus status);
 
   List<ArticleVersion> findAllByExternalIdOrderByMajorVersionDescMinorVersionDesc(UUID externalId);
 

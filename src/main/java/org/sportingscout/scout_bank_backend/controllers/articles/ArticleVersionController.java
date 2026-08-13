@@ -239,4 +239,25 @@ public class ArticleVersionController {
         request.reviewNote(), request.status());
     return ResponseEntity.ok().build();
   }
+
+  @GetMapping("/{externalId}/review")
+  @PreAuthorize("@auth.has('article:review')")
+  public ResponseEntity<List<ArticleVersionWithMedia>> getAllArticleVersionSubversionsForReview(
+      @PathVariable String externalId) {
+    return ResponseEntity.ok(
+        this.service.getAllArticleVersionsByStatus(
+            UUID.fromString(externalId), ApprovalStatus.PENDING_REVIEW));
+  }
+
+  // You need edit permissions to view accepted articles since you won't be
+  // calling this endpoint
+  // unless you plan to change the live version of an Article
+  @GetMapping("/{externalId}/approved")
+  @PreAuthorize("@auth.has('article:edit')")
+  public ResponseEntity<List<ArticleVersionWithMedia>> getAllAAcceptedArticleVersionSubversions(
+      @PathVariable String externalId) {
+
+    return ResponseEntity.ok(this.service.getAllArticleVersionsByStatus(
+        UUID.fromString(externalId), ApprovalStatus.APPROVED));
+  }
 }

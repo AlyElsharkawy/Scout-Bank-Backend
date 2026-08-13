@@ -279,6 +279,7 @@ public class ArticleVersionsService {
     List<List<ArticleVersionMediaAssignment>> mediaAssignments = new ArrayList<List<ArticleVersionMediaAssignment>>(
         articleSubversionsInput.size());
 
+    // Yes, this is a classic example of the N+1 query problem
     for (int i = 0; i < articleSubversionsInput.size(); i++) {
       mediaAssignments.add(
           this.articleVersionMediaAssignmentRepo
@@ -648,5 +649,16 @@ public class ArticleVersionsService {
     ApplicationUser loggedInUser = permissionsConfig.getAuthenticatedUser();
     previous.get().setStatus(newStatus, reviewNote, loggedInUser);
     this.articleVersionRepo.save(previous.get());
+  }
+
+  public List<ArticleVersionWithMedia> getAllArticleVersionsByStatus(
+      UUID externalId, ApprovalStatus status) {
+    List<ArticleVersion> noMediaArticleVersions = this.articleVersionRepo.findAllByExternalIdAndStatus(externalId,
+        status);
+
+    List<ArticleVersionWithMedia> finalArticleVersions = assignMediaToArticleSubversions(
+        noMediaArticleVersions);
+
+    return finalArticleVersions;
   }
 }
