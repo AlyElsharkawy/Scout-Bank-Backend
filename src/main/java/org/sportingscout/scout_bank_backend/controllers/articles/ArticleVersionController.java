@@ -27,6 +27,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Positive;
 
+import java.rmi.server.Operation;
 import java.util.List;
 import java.util.UUID;
 
@@ -200,17 +201,21 @@ public class ArticleVersionController {
       @RequestParam(name = "incrementMinor", required = false, defaultValue = "true") Boolean incrementMinor,
       @Valid @RequestBody ArticleMediaRequest request) {
 
+    OperationResult<Void> result;
     if (addMedia) {
-      return ResponseEntity.ok(
-          this.service.addArticleMediaAssignment(
-              UUID.fromString(externalId), majorVersion, minorVersion,
-              incrementMinor, request.keys(), request.captions(), request.updateNote()));
+      result = this.service.addArticleMediaAssignment(
+          UUID.fromString(externalId), majorVersion, minorVersion,
+          incrementMinor, request.keys(), request.captions(), request.updateNote());
     } else {
-      return ResponseEntity.ok(
-          this.service.removeArticleMediaAssignment(
-              UUID.fromString(externalId), majorVersion, minorVersion, incrementMinor,
-              request.keys(), request.updateNote()));
+      result = this.service.removeArticleMediaAssignment(
+          UUID.fromString(externalId), majorVersion, minorVersion, incrementMinor,
+          request.keys(), request.updateNote());
     }
+
+    if (result.hasWarnings()) {
+      return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(result);
+    }
+    return ResponseEntity.ok(result);
   }
 
   // When you want to submit an article version subversion for review
