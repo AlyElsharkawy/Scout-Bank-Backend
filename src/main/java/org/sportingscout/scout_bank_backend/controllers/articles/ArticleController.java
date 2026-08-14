@@ -2,6 +2,7 @@ package org.sportingscout.scout_bank_backend.controllers.articles;
 
 import org.sportingscout.scout_bank_backend.entities.Article;
 import org.sportingscout.scout_bank_backend.services.articles.ArticleService;
+import org.sportingscout.scout_bank_backend.dtos.articles.ArticleWithMedia;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
@@ -43,9 +44,9 @@ public class ArticleController {
   }
 
   @GetMapping
-  public ResponseEntity<PagedModel<Article>> getAllArticles(
+  public ResponseEntity<PagedModel<ArticleWithMedia>> getAllArticles(
       @PageableDefault(page = 0, size = 20, sort = "liveArticle.createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-    Page<Article> tempPage = this.service.getAllArticles(pageable);
+    Page<ArticleWithMedia> tempPage = this.service.getAllArticles(pageable);
     return ResponseEntity.ok(new PagedModel<>(tempPage));
   }
 
@@ -56,8 +57,9 @@ public class ArticleController {
         request.majorVersion(), request.minorVersion()));
   }
 
-  @DeleteMapping
-  public ResponseEntity<Void> deleteArticle() {
-    return null;
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deleteArticle(@PathVariable Long id) {
+    this.service.deleteArticle(id);
+    return ResponseEntity.noContent().build();
   }
 }

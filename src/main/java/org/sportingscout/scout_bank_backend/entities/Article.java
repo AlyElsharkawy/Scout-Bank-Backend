@@ -43,7 +43,7 @@ public class Article {
   private Long version;
 
   @OneToOne(fetch = FetchType.EAGER)
-  @JoinColumn(name = "live_version_id")
+  @JoinColumn(name = "live_version_id", nullable = false)
   private ArticleVersion liveArticle;
 
   @Column(nullable = false, updatable = false)

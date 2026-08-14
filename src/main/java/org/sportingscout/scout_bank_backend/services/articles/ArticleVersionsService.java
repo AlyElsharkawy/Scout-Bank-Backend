@@ -275,7 +275,7 @@ public class ArticleVersionsService {
     }
   }
 
-  private List<ArticleVersionWithMedia> assignMediaToArticleSubversions(List<ArticleVersion> articleSubversionsInput) {
+  public List<ArticleVersionWithMedia> assignMediaToArticleSubversions(List<ArticleVersion> articleSubversionsInput) {
     List<List<ArticleVersionMediaAssignment>> mediaAssignments = new ArrayList<List<ArticleVersionMediaAssignment>>(
         articleSubversionsInput.size());
 

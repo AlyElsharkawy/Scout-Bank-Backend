@@ -23,6 +23,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Email;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -83,12 +85,15 @@ public class ApplicationUser implements UserDetails {
   private UserRole role;
 
   @Column(nullable = false)
+  @JsonIgnore
   private String password;
 
   @Column(nullable = false, updatable = false)
+  @JsonIgnore
   private Instant createdAt;
 
   @Column(nullable = false)
+  @JsonIgnore
   private Instant updatedAt;
 
   @PrePersist
