@@ -1,44 +1,45 @@
 package org.sportingscout.scout_bank_backend.services.articles;
 
-import org.sportingscout.scout_bank_backend.entities.Article;
-import org.sportingscout.scout_bank_backend.entities.ArticleVersion;
-import org.sportingscout.scout_bank_backend.entities.ApprovalStatus;
-import org.sportingscout.scout_bank_backend.repositories.articles.ArticleRepository;
-import org.sportingscout.scout_bank_backend.repositories.articles.ArticleVersionRepository;
-import org.sportingscout.scout_bank_backend.services.articles.ArticleVersionsService;
-import org.sportingscout.scout_bank_backend.dtos.articles.ArticleWithMedia;
-import org.sportingscout.scout_bank_backend.dtos.articles.ArticleVersionWithMedia;
-
+import org.sportingscout.scout_bank_backend.entities.*;
+import org.sportingscout.scout_bank_backend.repositories.articles.*;
+import org.sportingscout.scout_bank_backend.dtos.articles.*;
+import org.springframework.data.domain.*;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.data.web.PagedModel;
 import org.springframework.stereotype.Service;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Service
 public class ArticleService {
   private final ArticleRepository articleRepository;
   private final ArticleVersionRepository articleVersionRepository;
   private final ArticleVersionsService articleVersionsService;
+  private final PagedResourcesAssembler<ArticleWithMedia> pagedAssembler;
 
-  ArticleService(
+  public ArticleService(
       ArticleRepository articleRepository,
       ArticleVersionRepository articleVersionRepository,
-      ArticleVersionsService articleVersionsService) {
+      ArticleVersionsService articleVersionsService,
+      PagedResourcesAssembler<ArticleWithMedia> pagedAssembler) {
     this.articleRepository = articleRepository;
     this.articleVersionRepository = articleVersionRepository;
     this.articleVersionsService = articleVersionsService;
+    this.pagedAssembler = pagedAssembler;
   }
 
-  public Page<ArticleWithMedia> getAllArticles(Pageable pageable) {
+  @Cacheable(value = "articles", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize + ':sort:' + #pageable.sort.toString()")
+  public CachedArticlePage getAllArticles(Pageable pageable) {
     Page<Article> allArticles = this.articleRepository.findAll(pageable);
+
     List<ArticleVersion> articleVersions = allArticles.getContent().stream()
         .map(Article::getLiveArticle)
         .toList();
@@ -52,10 +53,15 @@ public class ArticleService {
           allArticles.getContent().get(i), articleVersionWithMedias.get(i)));
     }
 
-    return new PageImpl<>(finalArticles, pageable, allArticles.getTotalElements());
+    return new CachedArticlePage(
+        finalArticles,
+        allArticles.getTotalElements(),
+        pageable.getPageNumber(),
+        pageable.getPageSize());
   }
 
   @Transactional
+  @CacheEvict(value = "articles", allEntries = true) // Evict cache on changes
   public Long createArticle(UUID externalId, Integer majorVersion, Integer minorVersion) {
     ArticleVersion articleVersion = this.articleVersionRepository
         .findByExternalIdAndMajorVersionAndMinorVersion(externalId, majorVersion, minorVersion)
@@ -72,6 +78,7 @@ public class ArticleService {
   }
 
   @Transactional
+  @CacheEvict(value = "articles", allEntries = true)
   public void deleteArticle(Long id) {
     Optional<Article> article = this.articleRepository.findById(id);
     if (article.isEmpty()) {

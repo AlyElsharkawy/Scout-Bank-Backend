@@ -3,6 +3,7 @@ package org.sportingscout.scout_bank_backend.controllers.articles;
 import org.sportingscout.scout_bank_backend.entities.Article;
 import org.sportingscout.scout_bank_backend.services.articles.ArticleService;
 import org.sportingscout.scout_bank_backend.dtos.articles.ArticleWithMedia;
+import org.sportingscout.scout_bank_backend.dtos.articles.CachedArticlePage;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.data.web.PagedModel;
+import org.springframework.hateoas.EntityModel;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -44,10 +45,10 @@ public class ArticleController {
   }
 
   @GetMapping
-  public ResponseEntity<PagedModel<ArticleWithMedia>> getAllArticles(
+  public ResponseEntity<CachedArticlePage> getAllArticles(
       @PageableDefault(page = 0, size = 20, sort = "liveArticle.createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-    Page<ArticleWithMedia> tempPage = this.service.getAllArticles(pageable);
-    return ResponseEntity.ok(new PagedModel<>(tempPage));
+    CachedArticlePage tempPage = this.service.getAllArticles(pageable);
+    return ResponseEntity.ok(tempPage);
   }
 
   @PostMapping

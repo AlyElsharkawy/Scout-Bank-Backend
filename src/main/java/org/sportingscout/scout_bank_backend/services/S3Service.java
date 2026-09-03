@@ -9,6 +9,9 @@ import org.sportingscout.scout_bank_backend.repositories.articles.ArticleVersion
 import org.sportingscout.scout_bank_backend.entities.ArticleVersionMedia;
 import org.sportingscout.scout_bank_backend.utils.S3FileUtilities;
 
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -238,6 +241,7 @@ public class S3Service {
     }
   }
 
+  @CacheEvict(value = "media", key = "#keyName")
   public void deleteFile(String keyName) {
     try {
       DeleteObjectRequest req = DeleteObjectRequest.builder()
@@ -277,6 +281,7 @@ public class S3Service {
     }
   }
 
+  @Cacheable(value = "media", key = "#keyName")
   public String getPresignedUrl(String keyName) {
     try {
       GetObjectRequest objectRequest = GetObjectRequest.builder()
@@ -285,7 +290,7 @@ public class S3Service {
           .build();
 
       GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-          .signatureDuration(Duration.ofMinutes(2))
+          .signatureDuration(Duration.ofDays(5))
           .getObjectRequest(objectRequest)
           .build();
 

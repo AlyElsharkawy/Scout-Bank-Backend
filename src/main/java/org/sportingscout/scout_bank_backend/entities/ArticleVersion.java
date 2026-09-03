@@ -141,6 +141,9 @@ public class ArticleVersion {
 
   @JsonProperty("author")
   public UserSummary getAuthorInformation() {
+    if (this.author == null) {
+      return null;
+    }
     return new UserSummary(
         this.author.getName(),
         this.author.getOrganization().getName(),
@@ -189,7 +192,7 @@ public class ArticleVersion {
 
   @JsonProperty("type")
   public String getArticleType() {
-    return this.type.getName();
+    return this.type != null ? this.type.getName() : null;
   }
 
   public void setStatus(ApprovalStatus status, String reviewNote, ApplicationUser reviewer) {
@@ -198,6 +201,7 @@ public class ArticleVersion {
     this.reviewNote = reviewNote;
   }
 
+  @JsonIgnore
   public String getSemanticVersion() {
     return this.majorVersion + "." + this.minorVersion;
   }
