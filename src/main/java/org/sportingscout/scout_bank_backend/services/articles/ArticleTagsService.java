@@ -1,10 +1,15 @@
 package org.sportingscout.scout_bank_backend.services.articles;
 
+import static org.sportingscout.scout_bank_backend.configuration.RedisNamespaces.*;
+
 import org.springframework.stereotype.Service;
 
-import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import jakarta.persistence.PersistenceContext;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.Cache;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataAccessException;
@@ -21,13 +26,16 @@ import java.util.NoSuchElementException;
 
 @Service
 public class ArticleTagsService {
-  private ArticleTagsRepository tagsRepo;
+  private final ArticleTagsRepository tagsRepo;
+  private final CacheManager cacheManager;
   private static final Logger logger = LoggerFactory.getLogger(ArticleTagsService.class);
 
-  public ArticleTagsService(ArticleTagsRepository tagsRepo) {
+  public ArticleTagsService(ArticleTagsRepository tagsRepo, CacheManager cacheManager) {
     this.tagsRepo = tagsRepo;
+    this.cacheManager = cacheManager;
   }
 
+  @Cacheable(value = ARTICLE_TAGS, key = "'all'")
   public List<ArticleTag> getAllTags() {
     try {
       logger.debug("Attempting to fetch all ArticleTag instances");
@@ -42,6 +50,7 @@ public class ArticleTagsService {
     }
   }
 
+  @Cacheable(value = ARTICLE_TAGS, key = "#id")
   public Optional<ArticleTag> getById(Long id) {
     try {
       logger.debug("Attempting to fetch ArticleTag with id: {}", id);
@@ -56,6 +65,10 @@ public class ArticleTagsService {
     }
   }
 
+  @Caching(evict = {
+      @CacheEvict(value = ARTICLE_TAGS, key = "'all'"),
+      @CacheEvict(value = ARTICLE_TAGS, key = "#id")
+  })
   public void deleteById(Long id) {
     try {
       logger.debug("Attempting to delete ArticleTag with ID: {}", id);
@@ -76,6 +89,7 @@ public class ArticleTagsService {
     }
   }
 
+  @CacheEvict(value = ARTICLE_TAGS, key = "all")
   public void createTag(String name) {
     try {
       ArticleTag temp = ArticleTag.builder().name(name).build();
@@ -94,6 +108,7 @@ public class ArticleTagsService {
     }
   }
 
+  @CacheEvict(value = ARTICLE_TAGS, key = "all")
   public void deleteByName(String name) {
     try {
       logger.debug("Attempting to delete ArticleTag with Name: {}", name);
@@ -103,6 +118,10 @@ public class ArticleTagsService {
       }
 
       tagsRepo.deleteByName(name);
+      Long id = this.tagsRepo.findIdByName(name).get();
+      Cache articlesCache = this.cacheManager.getCache(ARTICLE_TAGS);
+      articlesCache.evict(id);
+
       logger.info("Successfully deleted ArticleTag with name: {}", name);
 
     } catch (DataAccessException e) {
@@ -115,6 +134,10 @@ public class ArticleTagsService {
   }
 
   @Transactional
+  @Caching(evict = {
+      @CacheEvict(value = ARTICLE_TAGS, key = "'all'"),
+      @CacheEvict(value = ARTICLE_TAGS, key = "#id")
+  })
   public void editTag(Long id, String newName) {
     ArticleTag existingTag = tagsRepo.findById(id)
         .orElseThrow(() -> new NoSuchElementException("ArticleTag not found with id: " + id));

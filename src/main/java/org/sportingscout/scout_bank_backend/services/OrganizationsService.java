@@ -1,8 +1,12 @@
 package org.sportingscout.scout_bank_backend.services;
 
+import static org.sportingscout.scout_bank_backend.configuration.RedisNamespaces.*;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.dao.DataAccessException;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import org.sportingscout.scout_bank_backend.entities.Organization;
 import org.sportingscout.scout_bank_backend.repositories.OrganizationsRepository;
@@ -27,6 +31,7 @@ public class OrganizationsService {
     this.requestMapper = mapper;
   }
 
+  @Cacheable(value = ORGANIZATIONS, key = "#id")
   public Optional<Organization> getOrganizationById(Long id) {
     try {
       logger.debug("Attempting to fetch organization with id: {}", id);
@@ -41,6 +46,7 @@ public class OrganizationsService {
     }
   }
 
+  @Cacheable(value = ORGANIZATIONS, key = "'all'")
   public List<Organization> getAllOrganizations() {
     try {
       logger.debug("Attempting to fetch all organization instances");
@@ -55,6 +61,7 @@ public class OrganizationsService {
     }
   }
 
+  @CacheEvict(value = ORGANIZATIONS, key = "'all'")
   public void createOrganization(CreateOrganizationRequest request) {
     try {
       Organization entity = requestMapper.toEntity(request);
@@ -72,6 +79,10 @@ public class OrganizationsService {
     }
   }
 
+  @Caching(evict = {
+      @CacheEvict(value = ORGANIZATIONS, key = "'all'"),
+      @CacheEvict(value = ORGANIZATIONS, key = "#id")
+  })
   public void deleteOrganization(Long id) {
     try {
       logger.debug("Attempting to delete organization with ID: {}", id);
@@ -92,6 +103,10 @@ public class OrganizationsService {
     }
   }
 
+  @Caching(evict = {
+      @CacheEvict(value = ORGANIZATIONS, key = "'all'"),
+      @CacheEvict(value = ORGANIZATIONS, key = "#id")
+  })
   public void updateOrganizationInformation(Long id, CreateOrganizationRequest request) {
     try {
       Organization existingOrganization = organizationsRepo.findById(id)

@@ -1,5 +1,9 @@
 package org.sportingscout.scout_bank_backend.services.articles;
 
+import static org.sportingscout.scout_bank_backend.configuration.RedisConfig.*;
+import static org.sportingscout.scout_bank_backend.configuration.RedisNamespaces.ARTICLE_VERSIONS;
+import static org.sportingscout.scout_bank_backend.configuration.RedisNamespaces.ARTICLE_VERSION_GROUP;
+
 import org.sportingscout.scout_bank_backend.dtos.OperationResult;
 import org.sportingscout.scout_bank_backend.security.PermissionsConfig;
 import org.sportingscout.scout_bank_backend.services.S3Service;
@@ -18,11 +22,15 @@ import org.sportingscout.scout_bank_backend.repositories.articles.ArticleTagsRep
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleTypeRepository;
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleVersionMediaAssignmentRepository;
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleVersionMediaRepository;
+
 import org.springframework.stereotype.Service;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.cache.annotation.CacheEvict;
 
 import jakarta.persistence.PersistenceContext;
 import net.datafaker.providers.base.App;
@@ -107,16 +115,28 @@ public class ArticleVersionsService {
     return new UserResolutionResult(existingUsers, missingIds);
   }
 
-  /*
-   * private Set<ApplicationUser> resolveApplicationUserIds(List<UUID> ids) {
-   * Set<ApplicationUser> users = ids.stream()
-   * .map(externalId -> entityManager.unwrap(Session.class)
-   * .bySimpleNaturalId(ApplicationUser.class)
-   * .getReference(externalId))
-   * .collect(Collectors.toSet());
-   * return users;
-   * }
-   */
+  private ArticleVersion forkArticleSubversion(ArticleVersion previous, boolean incrementMinor,
+      String updateNote) {
+    ArticleVersion newSubversion = ArticleVersion.builder()
+        .title(previous.getTitle())
+        .content(previous.getContent())
+        .externalId(previous.getExternalId())
+        .editors(new HashSet<>(previous.getEditors()))
+        .author(previous.getAuthor())
+        .tags(new HashSet<>(previous.getTags()))
+        .type(previous.getType())
+        .updateNote(updateNote)
+        .build();
+
+    NextVersionPair nextVersionPair = getNextVersion(incrementMinor, previous.getExternalId());
+    newSubversion.setMajorVersion(nextVersionPair.majorVersion());
+    newSubversion.setMinorVersion(nextVersionPair.minorVersion());
+
+    newSubversion.setPreviousMajorVersion(previous.getMajorVersion());
+    newSubversion.setPreviousMinorVersion(previous.getMinorVersion());
+
+    return newSubversion;
+  }
 
   private NextVersionPair getNextVersion(boolean incrementMinor, UUID externalId) {
     String errorMessage = String.format("ArticleVersion subversion with externalId %s does not exist", externalId);
@@ -160,7 +180,7 @@ public class ArticleVersionsService {
   }
 
   @Transactional
-  private void saveAllMediaToDB(ArticleVersion articleVersion,
+  public void saveAllMediaToDB(ArticleVersion articleVersion,
       List<CreateArticleVersionRequest.ArticleMediaRequest> mediaInput) {
 
     List<String> articleVersionMediaKeys = mediaInput.stream()
@@ -304,6 +324,8 @@ public class ArticleVersionsService {
     return result;
   }
 
+  // TO CACHE
+  @Cacheable(value = ARTICLE_VERSION_GROUP, key = "'all-externalId:' + #externalId")
   public List<ArticleVersionWithMedia> getAllArticleVersionSubversionsByExternalId(UUID externalId) {
     doAdminSupervisorRoleCheck();
     try {
@@ -327,6 +349,7 @@ public class ArticleVersionsService {
     }
   }
 
+  @Cacheable(value = ARTICLE_VERSION_GROUP, key = "'all'")
   public List<ArticleVersionWithMedia> getAllArticleVersionSubversions() {
     doAdminSupervisorRoleCheck();
     try {
@@ -342,6 +365,7 @@ public class ArticleVersionsService {
     }
   }
 
+  @Cacheable(value = ARTICLE_VERSIONS, key = "'externalId:' + #externalId + ':majorVersion:' + #majorVersion + ':minorVersion:' + #majorVersion")
   public ArticleVersionWithMedia getArticleVersionSubversion(UUID externalId, Integer majorVersion,
       Integer minorVersion) {
     ApplicationUser user = this.permissionsConfig.getAuthenticatedUser();
@@ -389,6 +413,10 @@ public class ArticleVersionsService {
   }
 
   @Transactional
+  @Caching(evict = {
+      @CacheEvict(value = ARTICLE_VERSIONS, key = "'externalId:' + #externalId + ':majorVersion:' + #majorVersion + ':minorVersion:' + #majorVersion"),
+      @CacheEvict(value = ARTICLE_VERSION_GROUP, key = "'all'")
+  })
   public OperationResult<Void> modifyArticleVersionEditors(ArticleVersionEditorModifyOptions option,
       UUID externalId, Integer majorVersion, Integer minorVersion, List<String> editorIds) {
 
@@ -461,28 +489,7 @@ public class ArticleVersionsService {
     return OperationResult.withWarnings(null, warnings);
   }
 
-  private ArticleVersion forkArticleSubversion(ArticleVersion previous, boolean incrementMinor,
-      String updateNote) {
-    ArticleVersion newSubversion = ArticleVersion.builder()
-        .title(previous.getTitle())
-        .content(previous.getContent())
-        .externalId(previous.getExternalId())
-        .editors(new HashSet<>(previous.getEditors()))
-        .author(previous.getAuthor())
-        .type(previous.getType())
-        .updateNote(updateNote)
-        .build();
-
-    NextVersionPair nextVersionPair = getNextVersion(incrementMinor, previous.getExternalId());
-    newSubversion.setMajorVersion(nextVersionPair.majorVersion());
-    newSubversion.setMinorVersion(nextVersionPair.minorVersion());
-
-    newSubversion.setPreviousMajorVersion(previous.getMajorVersion());
-    newSubversion.setPreviousMinorVersion(previous.getMinorVersion());
-
-    return newSubversion;
-  }
-
+  @CacheEvict(value = ARTICLE_VERSION_GROUP, key = "'all'")
   public void modifyArticleVersionTags(boolean incrementMinor, boolean addTags,
       UUID externalId, Integer majorVersion, Integer minorVersion,
       List<Long> tagIds, String updateNote) {
@@ -515,6 +522,7 @@ public class ArticleVersionsService {
     this.articleVersionMediaAssignmentRepo.duplicateAssignmentsForVersion(previous.getId(), newId);
   }
 
+  @CacheEvict(value = ARTICLE_VERSIONS, key = "'all'")
   public OperationResult<Void> addArticleMediaAssignment(
       UUID externalId, Integer majorVersion, Integer minorVersion,
       Boolean incrementMinor,
@@ -536,6 +544,7 @@ public class ArticleVersionsService {
 
     // I will look into this in the future and see if there is a more efficient way
     // that doesn't require YET ANOTHER CLASS
+
     // There likely won't be more than a few invalid keys
     List<String> invalidKeys = new ArrayList<>(Math.ceilDiv(keys.size(), 4));
 
@@ -575,6 +584,7 @@ public class ArticleVersionsService {
   }
 
   @Transactional
+  @CacheEvict(value = ARTICLE_VERSIONS, key = "'all'")
   public OperationResult<Void> removeArticleMediaAssignment(
       UUID externalId, Integer majorVersion, Integer minorVersion,
       Boolean incrementMinor, List<String> keys, String updateNote) {
@@ -607,6 +617,11 @@ public class ArticleVersionsService {
     return OperationResult.withWarnings(null, invalidKeys);
   }
 
+  @Caching(evict = {
+      @CacheEvict(value = ARTICLE_VERSIONS, key = "'externalId:' + #externalId + ':majorVersion:' + #majorVersion + ':minorVersion:' + #majorVersion"),
+      @CacheEvict(value = ARTICLE_VERSION_GROUP, key = "'all'"),
+      @CacheEvict(value = ARTICLE_VERSION_GROUP, key = "'all-status:' + #externalId")
+  })
   public void submitArticleVersionSubversion(
       UUID externalId, Integer majorVersion, Integer minorVersion) {
     Optional<ArticleVersion> previous = this.articleVersionRepo
@@ -626,6 +641,11 @@ public class ArticleVersionsService {
     this.articleVersionRepo.save(previous.get());
   }
 
+  @Caching(evict = {
+      @CacheEvict(value = ARTICLE_VERSIONS, key = "'externalId:' + #externalId + ':majorVersion:' + #majorVersion + ':minorVersion:' + #majorVersion"),
+      @CacheEvict(value = ARTICLE_VERSION_GROUP, key = "'all'"),
+      @CacheEvict(value = ARTICLE_VERSION_GROUP, key = "'all-status:' + #externalId")
+  })
   public void reviewArticleVersion(
       UUID externalId, Integer majorVersion, Integer minorVersion, String reviewNote,
       ApprovalStatus newStatus) {
@@ -651,6 +671,7 @@ public class ArticleVersionsService {
     this.articleVersionRepo.save(previous.get());
   }
 
+  @Cacheable(value = ARTICLE_VERSION_GROUP, key = "'all-status:' + #externalId")
   public List<ArticleVersionWithMedia> getAllArticleVersionsByStatus(
       UUID externalId, ApprovalStatus status) {
     List<ArticleVersion> noMediaArticleVersions = this.articleVersionRepo.findAllByExternalIdAndStatus(externalId,

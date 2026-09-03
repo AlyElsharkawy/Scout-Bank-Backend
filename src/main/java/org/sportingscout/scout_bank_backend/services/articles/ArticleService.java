@@ -5,8 +5,6 @@ import org.sportingscout.scout_bank_backend.repositories.articles.*;
 import org.sportingscout.scout_bank_backend.dtos.articles.*;
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PagedResourcesAssembler;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.data.web.PagedModel;
 import org.springframework.stereotype.Service;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
@@ -23,7 +21,6 @@ public class ArticleService {
   private final ArticleRepository articleRepository;
   private final ArticleVersionRepository articleVersionRepository;
   private final ArticleVersionsService articleVersionsService;
-  private final PagedResourcesAssembler<ArticleWithMedia> pagedAssembler;
 
   public ArticleService(
       ArticleRepository articleRepository,
@@ -33,7 +30,6 @@ public class ArticleService {
     this.articleRepository = articleRepository;
     this.articleVersionRepository = articleVersionRepository;
     this.articleVersionsService = articleVersionsService;
-    this.pagedAssembler = pagedAssembler;
   }
 
   @Cacheable(value = "articles", key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize + ':sort:' + #pageable.sort.toString()")

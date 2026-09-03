@@ -4,6 +4,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import org.springframework.cache.annotation.Caching;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
+
+import static org.sportingscout.scout_bank_backend.configuration.RedisNamespaces.*;
+
 import org.sportingscout.scout_bank_backend.repositories.articles.ArticleTypeRepository;
 import org.sportingscout.scout_bank_backend.dtos.articles.CreateArticleTypeRequest;
 import org.sportingscout.scout_bank_backend.entities.ArticleType;
@@ -24,6 +30,7 @@ public class ArticleTypesService {
     this.articleTypeRepo = articleTypeRepo;
   }
 
+  @CacheEvict(value = ARTICLE_TYPES, key = "'all'")
   public void createArticleType(CreateArticleTypeRequest request) {
     try {
       ArticleType temp = new ArticleType(request.name(), request.description());
@@ -41,6 +48,10 @@ public class ArticleTypesService {
     }
   }
 
+  @Caching(evict = {
+      @CacheEvict(value = ARTICLE_TYPES, key = "'all'"),
+      @CacheEvict(value = ARTICLE_TYPES, key = "#id")
+  })
   public void editArticleType(Long id, CreateArticleTypeRequest request) {
     try {
       Optional<ArticleType> existing = this.articleTypeRepo.findById(id);
@@ -61,6 +72,7 @@ public class ArticleTypesService {
     }
   }
 
+  @Cacheable(value = ARTICLE_TYPES, key = "'all'")
   public List<ArticleType> getAllArticleTypes() {
     try {
       logger.debug("Attempting to fetch all ArticleTag instances");
@@ -75,6 +87,7 @@ public class ArticleTypesService {
     }
   }
 
+  @Cacheable(value = ARTICLE_TYPES, key = "#id")
   public ArticleType getArticleType(Long id) {
     try {
       logger.debug("Attempting to fetch ArticleTag instance");
