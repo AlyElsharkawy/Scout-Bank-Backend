@@ -2,6 +2,7 @@ package org.sportingscout.scout_bank_backend.configuration;
 
 import static org.sportingscout.scout_bank_backend.configuration.RedisNamespaces.*;
 import org.sportingscout.scout_bank_backend.dtos.articles.CachedArticlePage;
+import org.sportingscout.scout_bank_backend.dtos.articles.CachedArticleSummaryPage;
 import org.sportingscout.scout_bank_backend.dtos.articles.ArticleVersionWithMedia;
 
 import org.springframework.cache.annotation.EnableCaching;
@@ -53,6 +54,10 @@ public class RedisConfig {
         objectMapper,
         CachedArticlePage.class);
 
+    Jackson2JsonRedisSerializer<CachedArticleSummaryPage> articleSummaryPageSerializer = new Jackson2JsonRedisSerializer<>(
+        objectMapper,
+        CachedArticleSummaryPage.class);
+
     Jackson2JsonRedisSerializer<ArticleVersionWithMedia> articleVersionSerializer = new Jackson2JsonRedisSerializer<>(
         objectMapper,
         ArticleVersionWithMedia.class);
@@ -72,13 +77,11 @@ public class RedisConfig {
             .serializeValuesWith(
                 RedisSerializationContext.SerializationPair.fromSerializer(articlePageSerializer)));
 
-    /*
-     * configurations.put(ARTICLE_VERSIONS,
-     * defaultCacheConfiguration().entryTtl(Duration.ofMinutes(30))
-     * .serializeValuesWith(
-     * RedisSerializationContext.SerializationPair.fromSerializer(
-     * articleVersionSerializer)));
-     */
+    configurations.put(ARTICLE_SUMMARIES,
+        defaultCacheConfiguration().entryTtl(Duration.ofMinutes(15))
+            .serializeValuesWith(
+                RedisSerializationContext.SerializationPair
+                    .fromSerializer(articleSummaryPageSerializer)));
 
     configurations.put(ARTICLE_VERSION_GROUP,
         defaultCacheConfiguration().entryTtl(Duration.ofDays(14))

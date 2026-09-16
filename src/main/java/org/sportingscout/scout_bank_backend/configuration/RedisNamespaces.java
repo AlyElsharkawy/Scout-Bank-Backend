@@ -6,6 +6,7 @@ public final class RedisNamespaces {
   }
 
   public static final String ARTICLES = "articles";
+  public static final String ARTICLE_SUMMARIES = "article-summaries";
   public static final String ARTICLE_VERSIONS = "article-versions";
   public static final String ARTICLE_VERSION_GROUP = "article-version-group";
   public static final String MEDIA = "media";
