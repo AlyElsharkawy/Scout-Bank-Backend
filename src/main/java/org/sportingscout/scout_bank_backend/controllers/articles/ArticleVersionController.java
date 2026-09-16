@@ -27,7 +27,6 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Positive;
 
-import java.rmi.server.Operation;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,6 +43,11 @@ record ArticleMediaRequest(
     List<@NotBlank String> keys,
     List<@NotBlank String> captions,
     @NotBlank @Size(max = 511, message = "Update note cannot exceed 511 characters") String updateNote) {
+}
+
+record ArticleThumbnailRequest(
+    @NotBlank String key,
+    @NotBlank String caption) {
 }
 
 record ArticleReviewRequest(
@@ -216,6 +220,19 @@ public class ArticleVersionController {
       return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(result);
     }
     return ResponseEntity.ok(result);
+  }
+
+  @PatchMapping("/{externalId}/thumbnail")
+  @PreAuthorize("@auth.has('article:edit')")
+  public ResponseEntity<Void> addThumbnailToArticleVersion(
+      @PathVariable String externalId,
+      @RequestParam(name = "majorVersion") Integer majorVersion,
+      @RequestParam(name = "minorVersion") Integer minorVersion,
+      @RequestParam(name = "addThumbnail", defaultValue = "true", required = false) Boolean addThumbnail,
+      @Valid @RequestBody ArticleThumbnailRequest request) {
+    this.service.modifyThumbnail(UUID.fromString(externalId), majorVersion, minorVersion,
+        addThumbnail, request.key(), request.caption());
+    return ResponseEntity.ok().build();
   }
 
   // When you want to submit an article version subversion for review

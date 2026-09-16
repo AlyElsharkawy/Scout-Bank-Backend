@@ -111,6 +111,15 @@ public class ArticleVersion {
   @Column(nullable = false, columnDefinition = "TEXT")
   private String content;
 
+  @Column(nullable = false, length = 255)
+  private String summary;
+
+  @Setter
+  private String thumbnail;
+
+  @Setter
+  private String thumbnailCaption;
+
   @Column(nullable = false, updatable = false)
   @Setter
   private int majorVersion;
@@ -214,7 +223,10 @@ public class ArticleVersion {
       Set<ArticleTag> tags,
       UUID externalId,
       ApplicationUser reviewer,
-      String updateNote) {
+      String updateNote,
+      String summary,
+      String thumbnail,
+      String thumbnailCaption) {
     this.author = author;
     this.reviewer = reviewer;
     this.type = type;
@@ -229,5 +241,8 @@ public class ArticleVersion {
     this.tags = tags;
     this.externalId = externalId;
     this.updateNote = updateNote;
+    this.summary = summary;
+    this.thumbnail = thumbnail;
+    this.thumbnailCaption = thumbnailCaption;
   }
 }

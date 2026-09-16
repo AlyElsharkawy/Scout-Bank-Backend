@@ -126,6 +126,9 @@ public class ArticleVersionsService {
         .tags(new HashSet<>(previous.getTags()))
         .type(previous.getType())
         .updateNote(updateNote)
+        .summary(previous.getSummary())
+        .thumbnail(previous.getThumbnail())
+        .thumbnailCaption(previous.getThumbnailCaption())
         .build();
 
     NextVersionPair nextVersionPair = getNextVersion(incrementMinor, previous.getExternalId());
@@ -229,6 +232,9 @@ public class ArticleVersionsService {
           .updateNote(request.updateNote())
           .externalId(externalId)
           .type(articleType)
+          .summary(request.summary())
+          .thumbnail(request.thumbnail())
+          .thumbnailCaption(request.thumbnailCaption())
           .build();
 
       articleVersionRepo.save(articleVersion);
@@ -279,6 +285,9 @@ public class ArticleVersionsService {
         .reviewer(null)
         .tags(tags)
         .updateNote(request.updateNote())
+        .summary(request.summary())
+        .thumbnail(request.thumbnail())
+        .thumbnailCaption(request.thumbnailCaption())
         .type(articleType)
         .build();
 
@@ -292,6 +301,14 @@ public class ArticleVersionsService {
     if (!userRole.equals("Admin") && !userRole.equals("Supervisor")) {
       // If user is not admin or super admin, then throw unauthorized exception
       throw new AccessDeniedException("User is not Admin or Supervisor");
+    }
+  }
+
+  private void resolveKeysToPresignedUrls(List<ArticleVersion> articleVersions) {
+    for (ArticleVersion version : articleVersions) {
+      if (version.getThumbnail() != null) {
+        version.setThumbnail(this.s3Service.getPresignedUrl(version.getThumbnail()));
+      }
     }
   }
 
@@ -324,6 +341,35 @@ public class ArticleVersionsService {
     return result;
   }
 
+  @Transactional
+  @Caching(evict = {
+      @CacheEvict(value = ARTICLE_VERSIONS, key = "'externalId:' + #externalId + ':majorVersion:' + #majorVersion + ':minorVersion:' + #minorVersion"),
+      @CacheEvict(value = ARTICLE_VERSION_GROUP, key = "'all'"),
+      @CacheEvict(value = ARTICLE_VERSION_GROUP, key = "'all-externalId:' + #externalId")
+  })
+  public void modifyThumbnail(UUID externalId, Integer majorVersion, Integer minorVersion,
+      boolean addThumbnail, String key, String caption) {
+
+    ArticleVersion temp = this.articleVersionRepo.findByExternalIdAndMajorVersionAndMinorVersion(externalId,
+        majorVersion, minorVersion).orElseThrow(
+            () -> new NoSuchElementException(
+                String.format("ArticleVersion with externalId %s, majorVersion %d, and minorVersion %d does not exist",
+                    externalId, majorVersion, minorVersion)));
+
+    if (!addThumbnail) {
+      temp.setThumbnail(null);
+      temp.setThumbnailCaption(null);
+    } else {
+      if (key == null || !this.articleVersionMediaRepo.existsByKey(key)) {
+        throw new NoSuchElementException(
+            String.format("Media with key %s does not exist", key));
+      }
+      temp.setThumbnail(key);
+      temp.setThumbnailCaption(caption);
+    }
+    this.articleVersionRepo.save(temp);
+  }
+
   // TO CACHE
   @Cacheable(value = ARTICLE_VERSION_GROUP, key = "'all-externalId:' + #externalId")
   public List<ArticleVersionWithMedia> getAllArticleVersionSubversionsByExternalId(UUID externalId) {
@@ -332,6 +378,7 @@ public class ArticleVersionsService {
       logger.debug("Attempting to fetch all ArticleVersion instances with external id: {}", externalId);
       List<ArticleVersion> articleSubversionsInput = articleVersionRepo
           .findAllByExternalIdOrderByMajorVersionDescMinorVersionDesc(externalId);
+      resolveKeysToPresignedUrls(articleSubversionsInput);
       if (articleSubversionsInput.size() == 0) {
         throw new NoSuchElementException(String.format(
             "ArticleVersion with externalId %s does not exist", externalId.toString()));
@@ -355,6 +402,7 @@ public class ArticleVersionsService {
     try {
       logger.debug("Attempting to fetch all ArticleVersion instances");
       List<ArticleVersion> temp = articleVersionRepo.findAll();
+      resolveKeysToPresignedUrls(temp);
       return assignMediaToArticleSubversions(temp);
     } catch (DataAccessException e) {
       logger.error("Database error while fetching all ArticleVersion subversion instances: ", e);

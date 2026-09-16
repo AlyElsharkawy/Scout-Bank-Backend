@@ -1,5 +1,7 @@
 package org.sportingscout.scout_bank_backend.services;
 
+import static org.sportingscout.scout_bank_backend.configuration.RedisNamespaces.*;
+
 import org.sportingscout.scout_bank_backend.security.PermissionsConfig;
 import org.sportingscout.scout_bank_backend.entities.ApplicationUser;
 import org.sportingscout.scout_bank_backend.entities.Organization;
@@ -241,7 +243,7 @@ public class S3Service {
     }
   }
 
-  @CacheEvict(value = "media", key = "#keyName")
+  @CacheEvict(value = MEDIA, key = "#keyName")
   public void deleteFile(String keyName) {
     try {
       DeleteObjectRequest req = DeleteObjectRequest.builder()

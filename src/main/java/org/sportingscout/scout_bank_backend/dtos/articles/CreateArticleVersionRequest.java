@@ -14,6 +14,8 @@ public record CreateArticleVersionRequest(
     @NotBlank(message = "Article Version content cannot be empty") @Size(max = 65535, message = "Cannot contain more than 65,535 characters") String content,
     @NotEmpty(message = "Article Version must contain tags") List<Long> tagIds,
     @NotBlank(message = "Update note is required") String updateNote,
+    @NotBlank(message = "Summary is required") String summary,
+    String thumbnail, String thumbnailCaption,
     @Valid List<ArticleMediaRequest> media) {
 
   public record ArticleMediaRequest(
